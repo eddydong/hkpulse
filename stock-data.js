@@ -74,6 +74,7 @@ async function fetchTickersMeta() {
 
 
 function populateSelectors(selectedIndustry = '', selectedCompany = '') {
+  if (!Array.isArray(tickerMeta)) tickerMeta = [];
   const industrySet = new Set();
   let filteredCompanies = tickerMeta;
   for (const t of tickerMeta) {
