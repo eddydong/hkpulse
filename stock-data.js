@@ -159,19 +159,17 @@ async function fetchStockData() {
     // Step 4: Populate selectors with these defaults
     populateSelectors(firstIndustry, firstCompany);
 
-    // Step 5: Fetch data for the selected company only
-    let data = {};
+    // Step 5: Fetch all data once; we'll display only the selected company
     if (firstCompany) {
       const response = await fetch('https://get-stock-data-v436pnaqfa-df.a.run.app/');
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const allData = await response.json();
-      if (allData[firstCompany]) {
-        data[firstCompany] = allData[firstCompany];
-      }
+      allStockData = allData || {};
+    } else {
+      allStockData = {};
     }
-    allStockData = data;
     filterAndRender();
     document.getElementById('industry-select')?.addEventListener('change', filterAndRender);
     document.getElementById('company-select')?.addEventListener('change', filterAndRender);
