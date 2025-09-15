@@ -57,14 +57,27 @@ function renderStock(stockCode, stockData) {
 }
 
 
-let allStockData = {};
 
-function populateSelectors(data) {
+let allStockData = {};
+let tickerMeta = [];
+
+async function fetchTickersMeta() {
+  try {
+    const response = await fetch('https://get-stock-tickers-v436pnaqfa-df.a.run.app/');
+    if (!response.ok) throw new Error('Meta API error');
+    tickerMeta = await response.json();
+  } catch (e) {
+    console.error('Error fetching ticker meta:', e);
+    tickerMeta = [];
+  }
+}
+
+function populateSelectors() {
   const industrySet = new Set();
   const companyList = [];
-  for (const [code, stock] of Object.entries(data)) {
-    if (stock.industry) industrySet.add(stock.industry);
-    companyList.push({ code, name: stock.name });
+  for (const t of tickerMeta) {
+    if (t.industry) industrySet.add(t.industry);
+    companyList.push({ code: t.symbol, name: t.name });
   }
   const industrySelect = document.getElementById('industry-select');
   const companySelect = document.getElementById('company-select');
@@ -93,13 +106,14 @@ function filterAndRender() {
 
 async function fetchStockData() {
   try {
+    await fetchTickersMeta();
     const response = await fetch('https://get-stock-data-v436pnaqfa-df.a.run.app/');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
     allStockData = data;
-    populateSelectors(data);
+    populateSelectors();
     filterAndRender();
     document.getElementById('industry-select')?.addEventListener('change', filterAndRender);
     document.getElementById('company-select')?.addEventListener('change', filterAndRender);
