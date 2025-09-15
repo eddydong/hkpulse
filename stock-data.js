@@ -56,6 +56,41 @@ function renderStock(stockCode, stockData) {
   return html;
 }
 
+
+let allStockData = {};
+
+function populateSelectors(data) {
+  const industrySet = new Set();
+  const companyList = [];
+  for (const [code, stock] of Object.entries(data)) {
+    if (stock.industry) industrySet.add(stock.industry);
+    companyList.push({ code, name: stock.name });
+  }
+  const industrySelect = document.getElementById('industry-select');
+  const companySelect = document.getElementById('company-select');
+  if (industrySelect) {
+    industrySelect.innerHTML = '<option value="">All</option>' +
+      Array.from(industrySet).sort().map(i => `<option value="${i}">${i}</option>`).join('');
+  }
+  if (companySelect) {
+    companySelect.innerHTML = '<option value="">All</option>' +
+      companyList.sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${c.name} (${c.code})</option>`).join('');
+  }
+}
+
+function filterAndRender() {
+  const industry = document.getElementById('industry-select')?.value;
+  const company = document.getElementById('company-select')?.value;
+  const container = document.getElementById('data-container');
+  if (!container) return;
+  container.innerHTML = '';
+  for (const [stockCode, stockData] of Object.entries(allStockData)) {
+    if (industry && stockData.industry !== industry) continue;
+    if (company && stockCode !== company) continue;
+    container.innerHTML += renderStock(stockCode, stockData);
+  }
+}
+
 async function fetchStockData() {
   try {
     const response = await fetch('https://get-stock-data-v436pnaqfa-df.a.run.app/');
@@ -63,12 +98,11 @@ async function fetchStockData() {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
-    const container = document.getElementById('data-container');
-    if (!container) return;
-    container.innerHTML = '';
-    for (const [stockCode, stockData] of Object.entries(data)) {
-      container.innerHTML += renderStock(stockCode, stockData);
-    }
+    allStockData = data;
+    populateSelectors(data);
+    filterAndRender();
+    document.getElementById('industry-select')?.addEventListener('change', filterAndRender);
+    document.getElementById('company-select')?.addEventListener('change', filterAndRender);
   } catch (error) {
     console.error('Error fetching stock data:', error);
     const container = document.getElementById('data-container');
