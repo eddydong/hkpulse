@@ -1,3 +1,44 @@
+/* Sleek selector styles */
+label {
+    font-weight: 500;
+    color: #f8d47c;
+    margin-right: 6px;
+    letter-spacing: 0.5px;
+}
+
+select {
+    background: #23272a;
+    color: #f8d47c;
+    border: 1.5px solid #444;
+    border-radius: 6px;
+    padding: 8px 28px 8px 12px;
+    font-size: 1em;
+    margin-right: 18px;
+    outline: none;
+    box-shadow: 0 2px 8px #0004;
+    transition: border 0.2s, box-shadow 0.2s;
+    appearance: none;
+    cursor: pointer;
+    min-width: 160px;
+    font-family: inherit;
+}
+
+select:focus {
+    border-color: #f8d47c;
+    box-shadow: 0 0 0 2px #f8d47c44;
+}
+
+select option {
+    background: #23272a;
+    color: #e0e0e0;
+}
+
+.selector-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5em;
+    margin-bottom: 1.5em;
+}
 body {
     font-family: Arial, sans-serif;
     background: #181a1b;

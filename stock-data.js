@@ -72,28 +72,45 @@ async function fetchTickersMeta() {
   }
 }
 
-function populateSelectors() {
+
+function populateSelectors(selectedIndustry = '', selectedCompany = '') {
   const industrySet = new Set();
-  const companyList = [];
+  let filteredCompanies = tickerMeta;
   for (const t of tickerMeta) {
     if (t.industry) industrySet.add(t.industry);
-    companyList.push({ code: t.symbol, name: t.name });
+  }
+  if (selectedIndustry) {
+    filteredCompanies = tickerMeta.filter(t => t.industry === selectedIndustry);
   }
   const industrySelect = document.getElementById('industry-select');
   const companySelect = document.getElementById('company-select');
   if (industrySelect) {
     industrySelect.innerHTML = '<option value="">All</option>' +
-      Array.from(industrySet).sort().map(i => `<option value="${i}">${i}</option>`).join('');
+      Array.from(industrySet).sort().map(i => `<option value="${i}"${i === selectedIndustry ? ' selected' : ''}>${i}</option>`).join('');
   }
   if (companySelect) {
     companySelect.innerHTML = '<option value="">All</option>' +
-      companyList.sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${c.name} (${c.code})</option>`).join('');
+      filteredCompanies.sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.symbol}"${c.symbol === selectedCompany ? ' selected' : ''}>${c.name} (${c.symbol})</option>`).join('');
   }
 }
 
+
 function filterAndRender() {
-  const industry = document.getElementById('industry-select')?.value;
-  const company = document.getElementById('company-select')?.value;
+  const industrySelect = document.getElementById('industry-select');
+  const companySelect = document.getElementById('company-select');
+  const industry = industrySelect?.value;
+  const company = companySelect?.value;
+  // Update company selector when industry changes
+  if (document.activeElement === industrySelect) {
+    populateSelectors(industry, '');
+  }
+  // Update industry selector when company changes
+  if (document.activeElement === companySelect && company) {
+    const found = tickerMeta.find(t => t.symbol === company);
+    if (found && found.industry && industry !== found.industry) {
+      populateSelectors(found.industry, company);
+    }
+  }
   const container = document.getElementById('data-container');
   if (!container) return;
   container.innerHTML = '';
@@ -113,7 +130,16 @@ async function fetchStockData() {
     }
     const data = await response.json();
     allStockData = data;
-    populateSelectors();
+    // Try to preselect the first available company in allStockData
+    let firstCompany = '';
+    let firstIndustry = '';
+    const stockCodes = Object.keys(allStockData);
+    if (stockCodes.length > 0) {
+      firstCompany = stockCodes[0];
+      const found = tickerMeta.find(t => t.symbol === firstCompany);
+      if (found && found.industry) firstIndustry = found.industry;
+    }
+    populateSelectors(firstIndustry, firstCompany);
     filterAndRender();
     document.getElementById('industry-select')?.addEventListener('change', filterAndRender);
     document.getElementById('company-select')?.addEventListener('change', filterAndRender);
