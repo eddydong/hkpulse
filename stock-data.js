@@ -114,32 +114,33 @@ function filterAndRender() {
   const container = document.getElementById('data-container');
   if (!container) return;
   container.innerHTML = '';
-  for (const [stockCode, stockData] of Object.entries(allStockData)) {
-    if (industry && stockData.industry !== industry) continue;
-    if (company && stockCode !== company) continue;
-    container.innerHTML += renderStock(stockCode, stockData);
+  if (company) {
+    const stockData = allStockData[company];
+    if (stockData) {
+      container.innerHTML += renderStock(company, stockData);
+    }
   }
 }
+
 
 async function fetchStockData() {
   try {
     await fetchTickersMeta();
+    // Populate selectors first and select the first company by default
+    let firstCompany = '';
+    let firstIndustry = '';
+    if (tickerMeta.length > 0) {
+      firstCompany = tickerMeta[0].symbol;
+      firstIndustry = tickerMeta[0].industry || '';
+    }
+    populateSelectors(firstIndustry, firstCompany);
+    // Fetch all stock data
     const response = await fetch('https://get-stock-data-v436pnaqfa-df.a.run.app/');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
     allStockData = data;
-    // Try to preselect the first available company in allStockData
-    let firstCompany = '';
-    let firstIndustry = '';
-    const stockCodes = Object.keys(allStockData);
-    if (stockCodes.length > 0) {
-      firstCompany = stockCodes[0];
-      const found = tickerMeta.find(t => t.symbol === firstCompany);
-      if (found && found.industry) firstIndustry = found.industry;
-    }
-    populateSelectors(firstIndustry, firstCompany);
     filterAndRender();
     document.getElementById('industry-select')?.addEventListener('change', filterAndRender);
     document.getElementById('company-select')?.addEventListener('change', filterAndRender);
