@@ -65,7 +65,15 @@ async function fetchTickersMeta() {
   try {
     const response = await fetch('https://get-stock-tickers-v436pnaqfa-df.a.run.app/');
     if (!response.ok) throw new Error('Meta API error');
-    tickerMeta = await response.json();
+    const raw = await response.json();
+    // Normalize to array: API currently returns an object keyed by symbol
+    if (Array.isArray(raw)) {
+      tickerMeta = raw;
+    } else if (raw && typeof raw === 'object') {
+      tickerMeta = Object.entries(raw).map(([symbol, info]) => ({ symbol, ...info }));
+    } else {
+      tickerMeta = [];
+    }
   } catch (e) {
     console.error('Error fetching ticker meta:', e);
     tickerMeta = [];
@@ -74,6 +82,7 @@ async function fetchTickersMeta() {
 
 
 function populateSelectors(selectedIndustry = '', selectedCompany = '') {
+// Note: single, deduplicated definition
   if (!Array.isArray(tickerMeta)) tickerMeta = [];
   const industrySet = new Set();
   let filteredCompanies = tickerMeta;
