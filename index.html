@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Live Data</title>
+	<link rel="stylesheet" href="dark.css">
+</head>
+<body>
+	<h1>Live Data</h1>
+	<div id="data-container"></div>
+	<script>
+	// Sample data
+	const data = {"0027.HK":{"calendarEvents":{"earnings":{"earningsCallDate":[],"earningsDate":["2025-11-05 08:10:S"],"isEarningsDateEstimate":true,"revenueAverage":12167274500,"revenueHigh":12667000000,"revenueLow":11613100000},"exDividendDate":"2025-09-24 00:00:00","maxAge":1},"earningsTrend":{"maxAge":1,"trend":[{"earningsEstimate":{"avg":0.7,"earningsCurrency":"HKD","growth":{},"high":0.7,"low":0.7,"numberOfAnalysts":1,"yearAgoEps":{}},"endDate":"2025-09-30","epsRevisions":{"downLast30days":1,"downLast7Days":0,"downLast90days":{},"epsRevisionsCurrency":"HKD","upLast30days":0,"upLast7days":1},"epsTrend":{"30daysAgo":0.71,"60daysAgo":0.71,"7daysAgo":0.69,"90daysAgo":0.6,"current":0.7,"epsTrendCurrency":"HKD"},"growth":{},"maxAge":1,"period":"0q","revenueEstimate":{"avg":12167274500,"growth":0.14050001,"high":12667000000,"low":11613100000,"numberOfAnalysts":4,"revenueCurrency":"HKD","yearAgoRevenue":10668000000}},{"earningsEstimate":{"avg":0.87,"earningsCurrency":"HKD","growth":{},"high":0.87,"low":0.87,"numberOfAnalysts":1,"yearAgoEps":{}},"endDate":"2025-12-31","epsRevisions":{"downLast30days":0,"downLast7Days":0,"downLast90days":{},"epsRevisionsCurrency":"HKD","upLast30days":1,"upLast7days":1},"epsTrend":{"30daysAgo":0.78,"60daysAgo":0.76,"7daysAgo":0.8,"90daysAgo":0.77,"current":0.87,"epsTrendCurrency":"HKD"},"growth":{},"maxAge":1,"period":"+1q","revenueEstimate":{"avg":12479198500,"growth":0.105,"high":13072594000,"low":11908200000,"numberOfAnalysts":4,"revenueCurrency":"HKD","yearAgoRevenue":11293821000}},{"earningsEstimate":{"avg":2.53112,"earningsCurrency":"HKD","growth":0.2339,"high":2.94,"low":2.33504,"numberOfAnalysts":10,"yearAgoEps":2.0513},"endDate":"2025-12-31","epsRevisions":{"downLast30days":2,"downLast7Days":1,"downLast90days":{},"epsRevisionsCurrency":"HKD","upLast30days":7,"upLast7days":0},"epsTrend":{"30daysAgo":2.46349,"60daysAgo":2.31544,"7daysAgo":2.53112,"90daysAgo":2.21827,"current":2.53112,"epsTrendCurrency":"HKD"},"growth":0.2339,"maxAge":1,"period":"0y","revenueEstimate":{"avg":47843348600,"growth":0.1016,"high":49171000000,"low":46262000000,"numberOfAnalysts":16,"revenueCurrency":"HKD","yearAgoRevenue":43432373000}},{"earningsEstimate":{"avg":2.78364,"earningsCurrency":"HKD","growth":0.0998,"high":3.16,"low":2.53,"numberOfAnalysts":10,"yearAgoEps":2.53112},"endDate":"2026-12-31","epsRevisions":{"downLast30days":3,"downLast7Days":1,"downLast90days":{},"epsRevisionsCurrency":"HKD","upLast30days":5,"upLast7days":1},"epsTrend":{"30daysAgo":2.63194,"60daysAgo":2.50672,"7daysAgo":2.7222,"90daysAgo":2.3953,"current":2.78364,"epsTrendCurrency":"HKD"},"growth":0.0998,"maxAge":1,"period":"+1y","revenueEstimate":{"avg":51311846790,"growth":0.0725,"high":54259497270,"low":48142000000,"numberOfAnalysts":16,"revenueCurrency":"HKD","yearAgoRevenue":47843348600}}]},"financialData":{"currentPrice":41.56,"currentRatio":2.075,"debtToEquity":1.473,"earningsGrowth":0.191,"ebitda":11758499840,"ebitdaMargins":0.25978002,"financialCurrency":"HKD","grossMargins":0.77925,"grossProfits":35271401472,"maxAge":86400,"numberOfAnalystOpinions":19,"operatingMargins":0.19309,"profitMargins":0.21236,"quickRatio":2.035,"recommendationKey":"strong_buy","recommendationMean":1.31579,"returnOnAssets":0.056539997,"returnOnEquity":0.12528,"revenueGrowth":0.083,"revenuePerShare":10.347,"targetHighPrice":55.9,"targetLowPrice":43.6,"targetMeanPrice":49.04789,"targetMedianPrice":48.0,"totalCash":20705357824,"totalCashPerShare":4.733,"totalDebt":1179677056,"totalRevenue":45263200256},"industry":"Resorts & Casinos","name":"GALAXY ENT","recommendationTrend":{"maxAge":86400,"trend":[{"buy":14,"hold":1,"period":"0m","sell":0,"strongBuy":4,"strongSell":0},{"buy":15,"hold":1,"period":"-1m","sell":0,"strongBuy":4,"strongSell":0},{"buy":13,"hold":1,"period":"-2m","sell":0,"strongBuy":5,"strongSell":0},{"buy":12,"hold":1,"period":"-3m","sell":0,"strongBuy":6,"strongSell":0}]},"sector":"Consumer Cyclical"}};
+
+	function renderStock(stockCode, stockData) {
+		let html = `<div class=\"stock-block\">`;
+		html += `<div class=\"stock-title\">${stockData.name} (${stockCode})</div>`;
+		html += `<div><b>Industry:</b> ${stockData.industry || ''} &nbsp; <b>Sector:</b> ${stockData.sector || ''}</div>`;
+		html += `<div><b>Current Price:</b> ${stockData.financialData?.currentPrice ?? '-'} ${stockData.financialData?.financialCurrency ?? ''}</div>`;
+		html += `<div><b>Recommendation:</b> ${stockData.financialData?.recommendationKey ?? '-'}</div>`;
+
+		// Helper to render nested objects/arrays as HTML
+		function renderValue(val) {
+			if (val === null || val === undefined) return '-';
+			if (Array.isArray(val)) {
+				if (val.length === 0) return '-';
+				// If all elements are primitive, show as comma-separated
+				if (val.every(v => typeof v !== 'object')) {
+					return val.join(', ');
+				}
+				// Otherwise, render each element recursively (for array of objects)
+				return val.map(v => renderValue(v)).join(', ');
+			}
+			if (typeof val === 'object') {
+				let rows = Object.entries(val).map(([k, v]) => `<tr><td style='font-weight:normal;'>${k}</td><td>${renderValue(v)}</td></tr>`).join('');
+				return `<table style='margin:4px 0 4px 0; border:1px solid #eee; font-size:0.97em;'><tbody>${rows}</tbody></table>`;
+			}
+			return val;
+		}
+
+		// Calendar Events
+		if (stockData.calendarEvents) {
+			html += `<h4 style=\"margin:10px 0 4px 0;\">Calendar Events</h4>`;
+			html += `<table><tr><th>Event</th><th>Value</th></tr>`;
+			for (const [k, v] of Object.entries(stockData.calendarEvents)) {
+				html += `<tr><td>${k}</td><td>${renderValue(v)}</td></tr>`;
+			}
+			html += `</table>`;
+		}
+
+		// Earnings Trend
+		html += `<h4 style=\"margin:10px 0 4px 0;\">Earnings Trend</h4>`;
+		if (stockData.earningsTrend && Array.isArray(stockData.earningsTrend.trend)) {
+			html += `<table><tr><th>Period</th><th>EPS Est.</th><th>Revenue Est.</th><th>Growth</th><th>End Date</th></tr>`;
+			for (const t of stockData.earningsTrend.trend) {
+				html += `<tr>`;
+				html += `<td>${t.period ?? ''}</td>`;
+				html += `<td>${t.earningsEstimate?.avg ?? '-'}</td>`;
+				html += `<td>${t.revenueEstimate?.avg ?? '-'}</td>`;
+				let growthVal = t.growth ?? t.earningsEstimate?.growth;
+				if (typeof growthVal === 'object') growthVal = '-';
+				html += `<td>${growthVal ?? '-'}</td>`;
+				html += `<td>${t.endDate ?? ''}</td>`;
+				html += `</tr>`;
+			}
+			html += `</table>`;
+		}
+
+		// Financial Data
+		html += `<h4 style=\"margin:10px 0 4px 0;\">Financial Data</h4>`;
+		if (stockData.financialData) {
+			html += `<table><tr><th>Metric</th><th>Value</th></tr>`;
+			for (const [k, v] of Object.entries(stockData.financialData)) {
+				if (typeof v !== 'object') {
+					html += `<tr><td>${k}</td><td>${v}</td></tr>`;
+				}
+			}
+			html += `</table>`;
+		}
+
+		// Recommendation Trend
+		if (stockData.recommendationTrend && Array.isArray(stockData.recommendationTrend.trend)) {
+			html += `<h4 style=\"margin:10px 0 4px 0;\">Recommendation Trend</h4>`;
+			html += `<table><tr><th>Period</th><th>Buy</th><th>Hold</th><th>Sell</th><th>Strong Buy</th><th>Strong Sell</th></tr>`;
+			for (const t of stockData.recommendationTrend.trend) {
+				html += `<tr>`;
+				html += `<td>${t.period ?? ''}</td>`;
+				html += `<td>${t.buy ?? '-'}</td>`;
+				html += `<td>${t.hold ?? '-'}</td>`;
+				html += `<td>${t.sell ?? '-'}</td>`;
+				html += `<td>${t.strongBuy ?? '-'}</td>`;
+				html += `<td>${t.strongSell ?? '-'}</td>`;
+				html += `</tr>`;
+			}
+			html += `</table>`;
+		}
+
+		html += `</div>`;
+		return html;
+	}
+
+	const container = document.getElementById('data-container');
+	container.innerHTML = Object.entries(data).map(([code, d]) => renderStock(code, d)).join('');
+	</script>
+</body>
+</html>
