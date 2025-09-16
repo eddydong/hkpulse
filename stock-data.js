@@ -23,6 +23,44 @@ function renderStock(stockCode, stockData, priorData) {
   let html = `<div class="stock-block">`;
   html += `<div class="stock-title">${stockData.name || ''} (${stockCode})</div>`;
   html += `<div><b>Industry:</b> ${stockData.industry || ''} &nbsp; <b>Sector:</b> ${stockData.sector || ''}</div>`;
+  const displayVal = (v) => {
+    if (v === null || v === undefined) return '-';
+    if (typeof v === 'object') {
+      // Prefer human-readable formatting when available
+      if (Object.prototype.hasOwnProperty.call(v, 'fmt') && v.fmt != null) return v.fmt;
+      if (Object.prototype.hasOwnProperty.call(v, 'raw') && v.raw != null) return v.raw;
+      if (Object.prototype.hasOwnProperty.call(v, 'value') && v.value != null) return v.value;
+      return '-';
+    }
+    return v;
+  };
+  const formatPercentish = (v) => {
+    if (v === null || v === undefined) return '-';
+    if (typeof v === 'object') {
+      if (Object.prototype.hasOwnProperty.call(v, 'fmt') && v.fmt != null) return String(v.fmt);
+      if (Object.prototype.hasOwnProperty.call(v, 'raw') && v.raw != null) return formatPercentish(v.raw);
+      if (Object.prototype.hasOwnProperty.call(v, 'value') && v.value != null) return formatPercentish(v.value);
+      return '-';
+    }
+    if (typeof v === 'string') return v; // assume already formatted (e.g., '16.90%')
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      const abs = Math.abs(v);
+      if (abs < 1) {
+        return `${(v * 100).toFixed(2)}%`;
+      }
+      // Looks already like percentage number; append %
+      return `${v.toFixed(2)}%`;
+    }
+    return '-';
+  };
+  const pickGrowth = (t) => {
+    const candidates = [t?.growth, t?.earningsEstimate?.growth, t?.revenueEstimate?.growth];
+    for (const g of candidates) {
+      const val = formatPercentish(g);
+      if (val !== '-' && val !== '' && val !== undefined && val !== null) return val;
+    }
+    return '-';
+  };
   const toNumber = (v) => {
     if (v === null || v === undefined) return NaN;
     const s = String(v).replace(/,/g, '');
@@ -53,20 +91,24 @@ function renderStock(stockCode, stockData, priorData) {
   let deltaText = '';
   if (!Number.isNaN(todayPrice) && !Number.isNaN(yestPrice)) {
     const diff = todayPrice - yestPrice;
-    const up = diff > 0;
-    const down = diff < 0;
     const pct = yestPrice !== 0 ? (diff / yestPrice) * 100 : undefined;
+    // thresholds: hide noise
+    const showAmt = Number.isFinite(diff) && Math.abs(diff) >= 1e-6;
+    const showPct = typeof pct === 'number' && Number.isFinite(pct) && Math.abs(pct) >= 0.005; // >= 0.005% to show
+    const up = diff > 0 && (showAmt || showPct);
+    const down = diff < 0 && (showAmt || showPct);
     if (up) priceColor = 'style="color:#4caf50"';
     else if (down) priceColor = 'style="color:#e57373"';
     const arrow = up ? '▲' : down ? '▼' : '';
-    const pctStr = typeof pct === 'number' && Number.isFinite(pct) ? `${pct.toFixed(2)}%` : '';
-    const diffStr = Number.isFinite(diff) ? `${diff > 0 ? '+' : diff < 0 ? '' : ''}${diff.toFixed(2)}` : '';
+    const pctStr = showPct ? `${pct.toFixed(2)}%` : '';
+    const diffStr = showAmt ? `${diff > 0 ? '+' : ''}${diff.toFixed(2)}` : '';
     if (arrow || pctStr || diffStr) {
       deltaText = ` <span ${priceColor}>${arrow} ${pctStr}${pctStr && diffStr ? ' ' : ''}${diffStr}</span>`;
     }
   }
-  const displayPrice = stockData?.financialData?.currentPrice ?? todayPrice ?? '-';
-  html += `<div><b>Current Price:</b> <span ${priceColor}>${displayPrice}</span>${deltaText ? deltaText : ''} ${stockData.financialData?.financialCurrency ?? ''}</div>`;
+  const displayPrice = !Number.isNaN(todayPrice) ? todayPrice : displayVal(stockData?.financialData?.currentPrice);
+  const displayCurrency = displayVal(stockData?.financialData?.financialCurrency);
+  html += `<div><b>Current Price:</b> <span ${priceColor}>${displayPrice}</span>${deltaText ? deltaText : ''} ${displayCurrency}</div>`;
   html += `<div><b>Recommendation:</b> ${stockData.financialData?.recommendationKey ?? '-'}</div>`;
 
   // Calendar Events (responsive, compact)
@@ -90,14 +132,53 @@ function renderStock(stockCode, stockData, priorData) {
     html += `<table><tr><th>Period</th><th>EPS Est.</th><th>Revenue Est.</th><th>Growth</th><th>End Date</th></tr>`;
     for (const t of stockData.earningsTrend.trend) {
       html += `<tr>`;
-      html += `<td>${t.period ?? '-'}</td>`;
-      html += `<td>${t.earningsEstimate?.avg ?? '-'}</td>`;
-      html += `<td>${t.revenueEstimate?.avg ?? '-'}</td>`;
-      html += `<td>${t.growth ?? '-'}</td>`;
-      html += `<td>${t.endDate ?? '-'}</td>`;
+      html += `<td>${displayVal(t.period)}</td>`;
+  html += `<td>${displayVal(t.earningsEstimate?.avg)}</td>`;
+  html += `<td>${displayVal(t.revenueEstimate?.avg)}</td>`;
+  html += `<td>${pickGrowth(t)}</td>`;
+      html += `<td>${displayVal(t.endDate)}</td>`;
       html += `</tr>`;
     }
     html += `</table>`;
+  }
+
+  // Financial Data (primitive fields only)
+  if (stockData.financialData && typeof stockData.financialData === 'object') {
+    html += `<h4 style=\"margin:10px 0 4px 0;\">Financial Data</h4>`;
+    const entries = Object.entries(stockData.financialData).filter(([, v]) => {
+      if (v === null || v === undefined) return false;
+      if (typeof v !== 'object') return true;
+      // Include simple objects with fmt/raw/value, exclude complex nested objects/arrays
+      return (
+        (Object.prototype.hasOwnProperty.call(v, 'fmt') && v.fmt != null) ||
+        (Object.prototype.hasOwnProperty.call(v, 'raw') && v.raw != null) ||
+        (Object.prototype.hasOwnProperty.call(v, 'value') && v.value != null)
+      );
+    });
+    if (entries.length) {
+      html += `<div class=\"table-wrap\"><table class=\"kv-table\"><tbody>`;
+      for (const [k, v] of entries) {
+        html += `<tr><td style='font-weight:normal;'>${k}</td><td>${displayVal(v)}</td></tr>`;
+      }
+      html += `</tbody></table></div>`;
+    }
+  }
+
+  // Recommendation Trend
+  if (stockData.recommendationTrend && Array.isArray(stockData.recommendationTrend.trend)) {
+    html += `<h4 style=\"margin:10px 0 4px 0;\">Recommendation Trend</h4>`;
+    html += `<div class=\"table-wrap\"><table><thead><tr><th>Period</th><th>Buy</th><th>Hold</th><th>Sell</th><th>Strong Buy</th><th>Strong Sell</th></tr></thead><tbody>`;
+    for (const t of stockData.recommendationTrend.trend) {
+      html += `<tr>`;
+      html += `<td>${displayVal(t.period)}</td>`;
+      html += `<td>${displayVal(t.buy)}</td>`;
+      html += `<td>${displayVal(t.hold)}</td>`;
+      html += `<td>${displayVal(t.sell)}</td>`;
+      html += `<td>${displayVal(t.strongBuy)}</td>`;
+      html += `<td>${displayVal(t.strongSell)}</td>`;
+      html += `</tr>`;
+    }
+    html += `</tbody></table></div>`;
   }
 
   html += `</div>`;
@@ -202,7 +283,7 @@ async function fetchTickersMeta() {
 
 
 function populateSelectors(selectedIndustry = '', selectedCompany = '') {
-// Note: single, deduplicated definition
+  // Populate dropdowns without any 'All' placeholder options
   if (!Array.isArray(tickerMeta)) tickerMeta = [];
   const industrySet = new Set();
   let filteredCompanies = tickerMeta;
@@ -215,12 +296,16 @@ function populateSelectors(selectedIndustry = '', selectedCompany = '') {
   const industrySelect = document.getElementById('industry-select');
   const companySelect = document.getElementById('company-select');
   if (industrySelect) {
-    industrySelect.innerHTML = '<option value="">All</option>' +
-      Array.from(industrySet).sort().map(i => `<option value="${i}"${i === selectedIndustry ? ' selected' : ''}>${i}</option>`).join('');
+    industrySelect.innerHTML = Array.from(industrySet)
+      .sort()
+      .map(i => `<option value="${i}"${i === selectedIndustry ? ' selected' : ''}>${i}</option>`)
+      .join('');
   }
   if (companySelect) {
-    companySelect.innerHTML = '<option value="">All</option>' +
-      filteredCompanies.sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.symbol}"${c.symbol === selectedCompany ? ' selected' : ''}>${c.name} (${c.symbol})</option>`).join('');
+    companySelect.innerHTML = filteredCompanies
+      .sort((a, b) => (a.name || a.symbol).localeCompare(b.name || b.symbol))
+      .map(c => `<option value="${c.symbol}"${c.symbol === selectedCompany ? ' selected' : ''}>${c.name || c.symbol} (${c.symbol})</option>`)
+      .join('');
   }
 }
 
@@ -267,8 +352,8 @@ function filterAndRender() {
   // If industry changed, update company selector and auto-select the first company in that industry
   if (document.activeElement === industrySelect) {
     populateSelectors(industry, '');
-    // Auto-select first company in filtered list
-    const firstOption = companySelect && companySelect.options.length > 1 ? companySelect.options[1].value : '';
+    // Auto-select first company in filtered list (no placeholder present)
+    const firstOption = companySelect && companySelect.options.length > 0 ? companySelect.options[0].value : '';
     if (firstOption) {
       companySelect.value = firstOption;
       company = firstOption;
@@ -305,8 +390,10 @@ async function fetchStockData() {
     // Step 1: Select first industry
     let firstIndustry = '';
     let firstCompany = '';
-    if (tickerMeta.length > 0) {
-      firstIndustry = tickerMeta[0].industry || '';
+    // Choose the first industry alphabetically for stability
+    const industries = Array.from(new Set(tickerMeta.map(t => t.industry).filter(Boolean))).sort();
+    if (industries.length > 0) {
+      firstIndustry = industries[0];
     }
     // Step 2: Filter companies in that industry
     let filteredCompanies = tickerMeta;
@@ -315,6 +402,8 @@ async function fetchStockData() {
     }
     // Step 3: Select first company in that industry
     if (filteredCompanies.length > 0) {
+      // Stable alphabetical selection by display name then symbol
+      filteredCompanies.sort((a, b) => (a.name || a.symbol).localeCompare(b.name || b.symbol));
       firstCompany = filteredCompanies[0].symbol;
     }
     // Step 4: Populate selectors with these defaults

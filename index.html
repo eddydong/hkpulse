@@ -8,114 +8,15 @@
 	<link rel="stylesheet" href="dark.css">
 </head>
 <body>
-	<h1>Live Data</h1>
+	<h1>HKPulse</h1>
 	<div class="selector-bar">
 		<label for="industry-select">Industry:</label>
-		<select id="industry-select"><option value="">All</option></select>
+		<select id="industry-select"></select>
 		<label for="company-select">Company:</label>
-		<select id="company-select"><option value="">All</option></select>
+		<select id="company-select"></select>
 	</div>
 	<div id="data-container"></div>
-	<!-- Include the stock-data.js script to fetch and log live stock data -->
+	<!-- Include the stock-data.js script to fetch and render live stock data -->
 	<script src="stock-data.js"></script>
-	<script>
-	// Sample data
-	const data = {};
-
-	function renderStock(stockCode, stockData) {
-		let html = `<div class=\"stock-block\">`;
-		html += `<div class=\"stock-title\">${stockData.name} (${stockCode})</div>`;
-		html += `<div><b>Industry:</b> ${stockData.industry || ''} &nbsp; <b>Sector:</b> ${stockData.sector || ''}</div>`;
-		html += `<div><b>Current Price:</b> ${stockData.financialData?.currentPrice ?? '-'} ${stockData.financialData?.financialCurrency ?? ''}</div>`;
-		html += `<div><b>Recommendation:</b> ${stockData.financialData?.recommendationKey ?? '-'}</div>`;
-
-		// Helper to render nested objects/arrays as HTML
-		function renderValue(val) {
-			if (val === null || val === undefined) return '-';
-			if (Array.isArray(val)) {
-				if (val.length === 0) return '-';
-				// If all elements are primitive, show as comma-separated
-				if (val.every(v => typeof v !== 'object')) {
-					return val.join(', ');
-				}
-				// Otherwise, render each element recursively (for array of objects)
-				return val.map(v => renderValue(v)).join(', ');
-			}
-			if (typeof val === 'object') {
-				let rows = Object.entries(val).map(([k, v]) => `<tr><td style='font-weight:normal;'>${k}</td><td>${renderValue(v)}</td></tr>`).join('');
-				return `<div class="table-wrap"><table class="kv-table" style='margin:4px 0 4px 0; border:1px solid #eee; font-size:0.97em;'><tbody>${rows}</tbody></table></div>`;
-			}
-			return val;
-		}
-
-		// Calendar Events (responsive, compact)
-		if (stockData.calendarEvents) {
-			html += `<h4 style=\"margin:10px 0 4px 0;\">Calendar Events</h4>`;
-			html += `<div class=\"events-list\">`;
-			for (const [k, v] of Object.entries(stockData.calendarEvents)) {
-				const isComplex = v && (Array.isArray(v) || typeof v === 'object');
-				if (isComplex) {
-					html += `<details class=\"event-item\"><summary><span class=\"event-key\">${k}</span></summary><div class=\"event-details\">${renderValue(v)}</div></details>`;
-				} else {
-					html += `<div class=\"event-row\"><div class=\"event-key\">${k}</div><div class=\"event-val\">${renderValue(v)}</div></div>`;
-				}
-			}
-			html += `</div>`;
-		}
-
-		// Earnings Trend
-		html += `<h4 style=\"margin:10px 0 4px 0;\">Earnings Trend</h4>`;
-		if (stockData.earningsTrend && Array.isArray(stockData.earningsTrend.trend)) {
-			html += `<table><tr><th>Period</th><th>EPS Est.</th><th>Revenue Est.</th><th>Growth</th><th>End Date</th></tr>`;
-			for (const t of stockData.earningsTrend.trend) {
-				html += `<tr>`;
-				html += `<td>${t.period ?? ''}</td>`;
-				html += `<td>${t.earningsEstimate?.avg ?? '-'}</td>`;
-				html += `<td>${t.revenueEstimate?.avg ?? '-'}</td>`;
-				let growthVal = t.growth ?? t.earningsEstimate?.growth;
-				if (typeof growthVal === 'object') growthVal = '-';
-				html += `<td>${growthVal ?? '-'}</td>`;
-				html += `<td>${t.endDate ?? ''}</td>`;
-				html += `</tr>`;
-			}
-			html += `</table>`;
-		}
-
-		// Financial Data
-		html += `<h4 style=\"margin:10px 0 4px 0;\">Financial Data</h4>`;
-		if (stockData.financialData) {
-			html += `<table><tr><th>Metric</th><th>Value</th></tr>`;
-			for (const [k, v] of Object.entries(stockData.financialData)) {
-				if (typeof v !== 'object') {
-					html += `<tr><td>${k}</td><td>${v}</td></tr>`;
-				}
-			}
-			html += `</table>`;
-		}
-
-		// Recommendation Trend
-		if (stockData.recommendationTrend && Array.isArray(stockData.recommendationTrend.trend)) {
-			html += `<h4 style=\"margin:10px 0 4px 0;\">Recommendation Trend</h4>`;
-			html += `<table><tr><th>Period</th><th>Buy</th><th>Hold</th><th>Sell</th><th>Strong Buy</th><th>Strong Sell</th></tr>`;
-			for (const t of stockData.recommendationTrend.trend) {
-				html += `<tr>`;
-				html += `<td>${t.period ?? ''}</td>`;
-				html += `<td>${t.buy ?? '-'}</td>`;
-				html += `<td>${t.hold ?? '-'}</td>`;
-				html += `<td>${t.sell ?? '-'}</td>`;
-				html += `<td>${t.strongBuy ?? '-'}</td>`;
-				html += `<td>${t.strongSell ?? '-'}</td>`;
-				html += `</tr>`;
-			}
-			html += `</table>`;
-		}
-
-		html += `</div>`;
-		return html;
-	}
-
-	const container = document.getElementById('data-container');
-	container.innerHTML = Object.entries(data).map(([code, d]) => renderStock(code, d)).join('');
-	</script>
 </body>
 </html>
