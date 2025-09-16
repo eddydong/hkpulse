@@ -67,11 +67,14 @@ table {
     width: 100%;
     margin-bottom: 12px;
     background: #23272a;
+    table-layout: fixed;
 }
 th, td {
     border: 1px solid #444;
     padding: 6px 10px;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 th {
     background: #2c2f34;
@@ -109,10 +112,25 @@ img, svg, video, canvas {
 /* Tables: make scrollable on small screens */
 .table-wrap {
     width: 100%;
-    overflow-x: auto;
+    overflow-x: hidden;
 }
-.table-wrap table {
-    min-width: 520px;
+/* Removed min-width to prevent horizontal scroll */
+
+/* Compact key/value tables (nested data) */
+.kv-table {
+    width: 100%;
+    table-layout: fixed;
+}
+.kv-table td:first-child {
+    width: 44%;
+}
+.kv-table td:last-child {
+    width: 56%;
+}
+
+/* Make nested event details more compact */
+.event-details .kv-table {
+    font-size: 0.95em;
 }
 
 /* Mobile adjustments */
@@ -146,4 +164,49 @@ img, svg, video, canvas {
     th, td {
         padding: 6px 8px;
     }
+}
+
+/* Compact Calendar Events */
+.events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.event-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+    background: #23272a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+.event-key {
+    color: #f8d47c;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.event-val {
+    color: #e0e0e0;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+.event-item {
+    background: #23272a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+.event-item > summary {
+    cursor: pointer;
+    list-style: none;
+    color: #f8d47c;
+    font-weight: 600;
+}
+.event-item > summary::-webkit-details-marker {
+    display: none;
+}
+.event-details {
+    margin-top: 6px;
 }
