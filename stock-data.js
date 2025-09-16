@@ -34,6 +34,71 @@ function renderStock(stockCode, stockData, priorData) {
     }
     return v;
   };
+  const bestNumber = (v) => {
+    if (v === null || v === undefined) return NaN;
+    if (typeof v === 'object') {
+      if (Object.prototype.hasOwnProperty.call(v, 'raw') && v.raw != null) return toNumber(v.raw);
+      if (Object.prototype.hasOwnProperty.call(v, 'value') && v.value != null) return toNumber(v.value);
+      if (Object.prototype.hasOwnProperty.call(v, 'fmt') && v.fmt != null) return toNumber(v.fmt);
+      return NaN;
+    }
+    return toNumber(v);
+  };
+  const changeClass = (today, prior) => {
+    const a = bestNumber(today);
+    const b = bestNumber(prior);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return '';
+    if (a === b) return '';
+    return a > b ? 'pos' : 'neg';
+  };
+  const wrapIf = (htmlVal, cls) => (cls ? `<span class="${cls}">${htmlVal}</span>` : `${htmlVal}`);
+  const formatDelta = (today, prior) => {
+    const a = bestNumber(today);
+    const b = bestNumber(prior);
+    if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) return { cls: '', html: '' };
+    const diff = a - b;
+    const pct = b !== 0 ? (diff / b) * 100 : undefined;
+    const up = diff > 0;
+    const down = diff < 0;
+    const cls = up ? 'pos' : down ? 'neg' : '';
+    const arrow = up ? '▲' : down ? '▼' : '';
+    const pctStr = Number.isFinite(pct) ? `${pct.toFixed(2)}%` : '';
+    const diffAbs = Math.abs(diff) < 1 ? diff.toFixed(4) : diff.toFixed(2);
+    const diffStr = `${diff > 0 ? '+' : ''}${diffAbs}`;
+    const zeroish = (pctStr === '0.00%' || pctStr === '') && (diffStr === '+0.00' || diffStr === '0.00' || diffStr === '+0.0000' || diffStr === '0.0000');
+    if (!cls || zeroish) return { cls: '', html: '' };
+    return { cls, html: ` <span class="${cls}">${arrow} ${pctStr}${pctStr && diffStr ? ' ' : ''}${diffStr}</span>` };
+  };
+  // Render any value while applying change-based coloring recursively
+  const renderValueDiff = (val, prev) => {
+    if (val === null || val === undefined) return '-';
+    // Arrays
+    if (Array.isArray(val)) {
+      if (val.length === 0) return '-';
+      const prevArr = Array.isArray(prev) ? prev : [];
+      if (val.every(v => typeof v !== 'object')) {
+        return val.map((v, i) => {
+          const d = formatDelta(v, prevArr[i]);
+          const valHtml = wrapIf(displayVal(v), d.cls);
+          return `${valHtml}${d.html}`;
+        }).join(', ');
+      }
+      return val.map((v, i) => renderValueDiff(v, prevArr[i])).join(', ');
+    }
+    // Objects -> table of key/values with their own diffs
+    if (typeof val === 'object') {
+      const prevObj = (prev && typeof prev === 'object') ? prev : {};
+      let rows = Object.entries(val).map(([k, v]) => {
+        const priorChild = Object.prototype.hasOwnProperty.call(prevObj, k) ? prevObj[k] : undefined;
+        return `<tr><td style='font-weight:normal;'>${k}</td><td>${renderValueDiff(v, priorChild)}</td></tr>`;
+      }).join('');
+      return `<div class="table-wrap"><table class="kv-table" style='margin:4px 0 4px 0; border:1px solid #eee; font-size:0.97em;'><tbody>${rows}</tbody></table></div>`;
+    }
+    // Primitive -> color if changed
+    const d = formatDelta(val, prev);
+    const valHtml = wrapIf(displayVal(val), d.cls);
+    return `${valHtml}${d.html}`;
+  };
   const formatPercentish = (v) => {
     if (v === null || v === undefined) return '-';
     if (typeof v === 'object') {
@@ -87,29 +152,45 @@ function renderStock(stockCode, stockData, priorData) {
     priorData?.price?.regularMarketPrice,
     priorData?.summaryDetail?.regularMarketPrice
   );
-  let priceColor = '';
+  // Color coding ONLY for today vs yesterday comparison
+  let priceClass = '';
   let deltaText = '';
   if (!Number.isNaN(todayPrice) && !Number.isNaN(yestPrice)) {
     const diff = todayPrice - yestPrice;
     const pct = yestPrice !== 0 ? (diff / yestPrice) * 100 : undefined;
-    // thresholds: hide noise
-    const showAmt = Number.isFinite(diff) && Math.abs(diff) >= 1e-6;
-    const showPct = typeof pct === 'number' && Number.isFinite(pct) && Math.abs(pct) >= 0.005; // >= 0.005% to show
-    const up = diff > 0 && (showAmt || showPct);
-    const down = diff < 0 && (showAmt || showPct);
-    if (up) priceColor = 'style="color:#4caf50"';
-    else if (down) priceColor = 'style="color:#e57373"';
+    const up = diff > 0;
+    const down = diff < 0;
+    if (up) priceClass = 'pos';
+    else if (down) priceClass = 'neg';
     const arrow = up ? '▲' : down ? '▼' : '';
-    const pctStr = showPct ? `${pct.toFixed(2)}%` : '';
-    const diffStr = showAmt ? `${diff > 0 ? '+' : ''}${diff.toFixed(2)}` : '';
-    if (arrow || pctStr || diffStr) {
-      deltaText = ` <span ${priceColor}>${arrow} ${pctStr}${pctStr && diffStr ? ' ' : ''}${diffStr}</span>`;
+    const pctStr = Number.isFinite(pct) ? `${pct.toFixed(2)}%` : '';
+    const diffStr = Number.isFinite(diff) ? `${diff > 0 ? '+' : ''}${diff.toFixed(2)}` : '';
+    // If both rounded values are zero-like, don't show arrow or color
+    const zeroish = (pctStr === '0.00%' || pctStr === '') && (diffStr === '+0.00' || diffStr === '0.00' || diffStr === '');
+    if (!zeroish) {
+      const cls = priceClass || 'neutral';
+      deltaText = ` <span class="${cls}">${arrow} ${pctStr}${pctStr && diffStr ? ' ' : ''}${diffStr}</span>`;
     }
   }
   const displayPrice = !Number.isNaN(todayPrice) ? todayPrice : displayVal(stockData?.financialData?.currentPrice);
   const displayCurrency = displayVal(stockData?.financialData?.financialCurrency);
-  html += `<div><b>Current Price:</b> <span ${priceColor}>${displayPrice}</span>${deltaText ? deltaText : ''} ${displayCurrency}</div>`;
-  html += `<div><b>Recommendation:</b> ${stockData.financialData?.recommendationKey ?? '-'}</div>`;
+  const priceSpan = priceClass ? `<span class="${priceClass}">${displayPrice}</span>` : `<span>${displayPrice}</span>`;
+  html += `<div><b>Current Price:</b> ${priceSpan}${deltaText ? deltaText : ''} ${displayCurrency}</div>`;
+  // Recommendation change (today vs yesterday, HK time)
+  const recToday = stockData.financialData?.recommendationKey ?? '-';
+  const recYest = priorData?.financialData?.recommendationKey ?? '';
+  const recScale = ['strong_sell', 'sell', 'hold', 'buy', 'strong_buy'];
+  const rToday = recScale.indexOf(recToday);
+  const rYest = recScale.indexOf(recYest);
+  let recChangeHtml = '';
+  if (rToday !== -1 && rYest !== -1 && rToday !== rYest) {
+    const up = rToday > rYest; // higher on scale is an upgrade
+    const cls = up ? 'pos' : 'neg';
+    const arrow = up ? '▲' : '▼';
+    const verb = up ? 'upgrade' : 'downgrade';
+    recChangeHtml = ` <span class="${cls}">${arrow} ${verb} from ${recYest}</span>`;
+  }
+  html += `<div><b>Recommendation:</b> ${recToday}${recChangeHtml}</div>`;
 
   // Calendar Events (responsive, compact)
   if (stockData.calendarEvents) {
@@ -117,10 +198,12 @@ function renderStock(stockCode, stockData, priorData) {
     html += `<div class=\"events-list\">`;
     for (const [k, v] of Object.entries(stockData.calendarEvents)) {
       const isComplex = v && (Array.isArray(v) || typeof v === 'object');
+      const prevVal = priorData?.calendarEvents ? priorData.calendarEvents[k] : undefined;
       if (isComplex) {
-        html += `<details class=\"event-item\"><summary><span class=\"event-key\">${k}</span></summary><div class=\"event-details\">${renderValue(v)}</div></details>`;
+        html += `<details class=\"event-item\"><summary><span class=\"event-key\">${k}</span></summary><div class=\"event-details\">${renderValueDiff(v, prevVal)}</div></details>`;
       } else {
-        html += `<div class=\"event-row\"><div class=\"event-key\">${k}</div><div class=\"event-val\">${renderValue(v)}</div></div>`;
+        const vHtml = wrapIf(displayVal(v), changeClass(v, prevVal));
+        html += `<div class=\"event-row\"><div class=\"event-key\">${k}</div><div class=\"event-val\">${vHtml}</div></div>`;
       }
     }
     html += `</div>`;
@@ -131,11 +214,33 @@ function renderStock(stockCode, stockData, priorData) {
   if (stockData.earningsTrend && Array.isArray(stockData.earningsTrend.trend)) {
     html += `<table><tr><th>Period</th><th>EPS Est.</th><th>Revenue Est.</th><th>Growth</th><th>End Date</th></tr>`;
     for (const t of stockData.earningsTrend.trend) {
-      html += `<tr>`;
+    html += `<tr>`;
       html += `<td>${displayVal(t.period)}</td>`;
-  html += `<td>${displayVal(t.earningsEstimate?.avg)}</td>`;
-  html += `<td>${displayVal(t.revenueEstimate?.avg)}</td>`;
-  html += `<td>${pickGrowth(t)}</td>`;
+      const priorT = priorData?.earningsTrend && Array.isArray(priorData.earningsTrend.trend)
+        ? priorData.earningsTrend.trend.find(x => x.period === t.period)
+        : undefined;
+      {
+        const d = formatDelta(t.earningsEstimate?.avg, priorT?.earningsEstimate?.avg);
+        html += `<td>${wrapIf(displayVal(t.earningsEstimate?.avg), d.cls)}${d.html}</td>`;
+      }
+      {
+        const d = formatDelta(t.revenueEstimate?.avg, priorT?.revenueEstimate?.avg);
+        html += `<td>${wrapIf(displayVal(t.revenueEstimate?.avg), d.cls)}${d.html}</td>`;
+      }
+      {
+        const growthNum = (x) => {
+          const cand = [x?.growth, x?.earningsEstimate?.growth, x?.revenueEstimate?.growth];
+          for (const c of cand) {
+            const n = bestNumber(c);
+            if (Number.isFinite(n)) return n;
+          }
+          return NaN;
+        };
+        const gNow = growthNum(t);
+        const gPrev = growthNum(priorT || {});
+        const d = formatDelta(gNow, gPrev);
+        html += `<td>${wrapIf(pickGrowth(t), d.cls)}${d.html}</td>`;
+      }
       html += `<td>${displayVal(t.endDate)}</td>`;
       html += `</tr>`;
     }
@@ -158,7 +263,20 @@ function renderStock(stockCode, stockData, priorData) {
     if (entries.length) {
       html += `<div class=\"table-wrap\"><table class=\"kv-table\"><tbody>`;
       for (const [k, v] of entries) {
-        html += `<tr><td style='font-weight:normal;'>${k}</td><td>${displayVal(v)}</td></tr>`;
+        const priorV = priorData?.financialData ? priorData.financialData[k] : undefined;
+        let cls = '';
+        let deltaHtml = '';
+        if (k === 'currentPrice' || k === 'regularMarketPrice') {
+          // Align with header values
+          cls = deltaText ? (priceClass || '') : '';
+          deltaHtml = deltaText ? `${deltaText}` : '';
+        } else {
+          const d = formatDelta(v, priorV);
+          cls = d.cls;
+          deltaHtml = d.html;
+        }
+        const valHtml = wrapIf(displayVal(v), cls);
+        html += `<tr><td style='font-weight:normal;'>${k}</td><td>${valHtml}${deltaHtml}</td></tr>`;
       }
       html += `</tbody></table></div>`;
     }
@@ -167,15 +285,18 @@ function renderStock(stockCode, stockData, priorData) {
   // Recommendation Trend
   if (stockData.recommendationTrend && Array.isArray(stockData.recommendationTrend.trend)) {
     html += `<h4 style=\"margin:10px 0 4px 0;\">Recommendation Trend</h4>`;
-    html += `<div class=\"table-wrap\"><table><thead><tr><th>Period</th><th>Buy</th><th>Hold</th><th>Sell</th><th>Strong Buy</th><th>Strong Sell</th></tr></thead><tbody>`;
+    html += `<div class=\"table-wrap\"><table><thead><tr><th>Period</th><th>Strong Buy</th><th>Buy</th><th>Hold</th><th>Sell</th><th>Strong Sell</th></tr></thead><tbody>`;
     for (const t of stockData.recommendationTrend.trend) {
       html += `<tr>`;
-      html += `<td>${displayVal(t.period)}</td>`;
-      html += `<td>${displayVal(t.buy)}</td>`;
-      html += `<td>${displayVal(t.hold)}</td>`;
-      html += `<td>${displayVal(t.sell)}</td>`;
-      html += `<td>${displayVal(t.strongBuy)}</td>`;
-      html += `<td>${displayVal(t.strongSell)}</td>`;
+      const priorT = priorData?.recommendationTrend && Array.isArray(priorData.recommendationTrend.trend)
+        ? priorData.recommendationTrend.trend.find(x => x.period === t.period)
+        : undefined;
+  html += `<td>${displayVal(t.period)}</td>`;
+  { const d = formatDelta(t.strongBuy, priorT?.strongBuy); html += `<td>${wrapIf(displayVal(t.strongBuy), d.cls)}${d.html}</td>`; }
+  { const d = formatDelta(t.buy, priorT?.buy); html += `<td>${wrapIf(displayVal(t.buy), d.cls)}${d.html}</td>`; }
+  { const d = formatDelta(t.hold, priorT?.hold); html += `<td>${wrapIf(displayVal(t.hold), d.cls)}${d.html}</td>`; }
+  { const d = formatDelta(t.sell, priorT?.sell); html += `<td>${wrapIf(displayVal(t.sell), d.cls)}${d.html}</td>`; }
+  { const d = formatDelta(t.strongSell, priorT?.strongSell); html += `<td>${wrapIf(displayVal(t.strongSell), d.cls)}${d.html}</td>`; }
       html += `</tr>`;
     }
     html += `</tbody></table></div>`;

@@ -88,6 +88,11 @@ tr:nth-child(odd) td {
 }
 a { color: #7ec7ff; }
 
+/* Sign-based coloring used only for today vs yesterday comparisons */
+.pos { color: #4caf50; }
+.neg { color: #e57373; }
+.neutral { color: inherit; }
+
 /* Global responsive defaults */
 * {
     box-sizing: border-box;
