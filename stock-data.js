@@ -1,6 +1,37 @@
 // stock-data.js
 // Fetches stock data from the provided API and logs it to the console
 
+// Login functionality
+window.addEventListener('DOMContentLoaded', function() {
+  const loginDiv = document.getElementById('loginDiv');
+  const loginForm = document.getElementById('login-form');
+  
+  // Check if user is already logged in (has token in localStorage)
+  if (localStorage.getItem('hkpulse-token')) {
+    loginDiv.style.display = 'none';
+    fetchStockData();
+    return;
+  }
+  
+  loginForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const rememberMe = document.getElementById('remember-me').checked;
+    
+    if (username && password) {
+      // Save token to localStorage if "remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem('hkpulse-token', 'logged-in-' + Date.now());
+      }
+      
+      // Hide login div after successful login
+      loginDiv.style.display = 'none';
+      // Start loading stock data
+      fetchStockData();
+    }
+  });
+});
 
 // Helper to render nested objects/arrays as HTML (copied from index.html)
 function renderValue(val) {

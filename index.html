@@ -16,7 +16,25 @@
 	</script>	
 </head>
 <body>
-	<h1>HKPulse</h1>
+	<div id="loginDiv" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #23272a; display: block; z-index: 1000;">
+		<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: #e0e0e0; gap: 40px;">
+			<div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
+				<img src="res/hkpulse logo.png" alt="HKPulse Logo" style="max-width: 120px; height: auto; border-radius: 12px;" />
+			</div>
+			<form id="login-form" style="display: flex; flex-direction: column; align-items: center; gap: 15px; background: #2c2f33; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+				<input type="text" id="username" placeholder="Username" style="background: #40444b; border: 1px solid #444; color: #e0e0e0; padding: 12px 16px; border-radius: 8px; width: 200px; font-size: 14px;" required />
+				<input type="password" id="password" placeholder="Password" style="background: #40444b; border: 1px solid #444; color: #e0e0e0; padding: 12px 16px; border-radius: 8px; width: 200px; font-size: 14px;" required />
+				<label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer;">
+					<input type="checkbox" id="remember-me" style="accent-color: #f8d47c; width: 16px; height: 16px; cursor: pointer;" />
+					Remember me
+				</label>
+				<button type="submit" style="background: #f8d47c; color: #23272a; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s;">Login</button>
+			</form>
+		</div>
+	</div>
+	<div style="display: flex; justify-content: center; align-items: center; padding: 0 20px 20px 20px;">
+		<img src="res/hkpulse logo.png" alt="HKPulse Logo" style="max-width: 60px; height: auto; border-radius: 12px;" />
+	</div>
 	<div class="selector-bar">
 		<label for="sector-select">Sector:</label>
 		<span class="select-wrap"><select id="sector-select"></select></span>
