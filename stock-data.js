@@ -45,7 +45,7 @@ window.addEventListener('DOMContentLoaded', function() {
   
   // Check if user is already logged in (has token in localStorage)
   if (localStorage.getItem('hkpulse-token')) {
-    loginDiv.style.display = 'none';
+    loginDiv.classList.add('hidden');
     enableScrolling();
     fetchStockData();
     setupLogout();
@@ -68,7 +68,7 @@ window.addEventListener('DOMContentLoaded', function() {
       }
       
       // Hide login div after successful login
-      loginDiv.style.display = 'none';
+      loginDiv.classList.add('hidden');
       enableScrolling();
       // Start loading stock data
       fetchStockData();
@@ -85,7 +85,7 @@ window.addEventListener('DOMContentLoaded', function() {
         // Remove token from localStorage
         localStorage.removeItem('hkpulse-token');
         // Show login div
-        loginDiv.style.display = 'block';
+        loginDiv.classList.remove('hidden');
         disableScrolling();
         // Clear form fields
         document.getElementById('username').value = '';

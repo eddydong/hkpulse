@@ -24,6 +24,16 @@
 			justify-content: center !important;
 		}
 		
+		/* Allow hiding the login div when logged in */
+		#loginDiv.hidden {
+			display: none !important;
+		}
+		
+		/* Show login div by default */
+		#loginDiv:not(.hidden) {
+			display: flex !important;
+		}
+		
 		/* iOS specific fixes */
 		@supports (-webkit-touch-callout: none) {
 			#loginDiv {
