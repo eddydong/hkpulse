@@ -3,9 +3,35 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<title>Live Data</title>
 	<link rel="stylesheet" href="dark.css">
+	<style>
+		/* Force full coverage on iOS devices */
+		#loginDiv {
+			position: fixed !important;
+			top: 0 !important;
+			left: 0 !important;
+			right: 0 !important;
+			bottom: 0 !important;
+			width: 100vw !important;
+			height: 100vh !important;
+			background: #23272a !important;
+			z-index: 9999 !important;
+			overflow: hidden !important;
+			display: flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+		}
+		
+		/* iOS specific fixes */
+		@supports (-webkit-touch-callout: none) {
+			#loginDiv {
+				height: 100vh !important;
+				height: -webkit-fill-available !important;
+			}
+		}
+	</style>
 	<!-- Google tag (gtag.js) -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-PEQH7CBMNS"></script>
 	<script>
@@ -16,8 +42,8 @@
 	</script>	
 </head>
 <body>
-	<div id="loginDiv" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #23272a; display: block; z-index: 1000; overflow: hidden;">
-		<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; height: 100dvh; color: #e0e0e0; gap: 40px; padding: 20px; box-sizing: border-box; min-height: 100vh; min-height: 100dvh;">
+	<div id="loginDiv" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #23272a; display: flex; align-items: center; justify-content: center; z-index: 1000; overflow: hidden;">
+		<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; color: #e0e0e0; gap: 40px; padding: 40px; box-sizing: border-box; width: 100%; max-width: 400px; transform: translateY(-60px);">
 			<div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
 				<img src="res/hkpulse logo.png" alt="HKPulse Logo" style="max-width: 120px; height: auto; border-radius: 12px;" />
 			</div>

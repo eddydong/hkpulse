@@ -6,13 +6,19 @@ window.addEventListener('DOMContentLoaded', function() {
   const loginDiv = document.getElementById('loginDiv');
   const loginForm = document.getElementById('login-form');
   
-  // Function to set proper height for login div
+  // Function to set massive coverage for login div
   function setLoginDivHeight() {
     const windowHeight = window.innerHeight;
     const screenHeight = screen.height;
-    const maxHeight = Math.max(windowHeight, screenHeight);
-    loginDiv.style.height = maxHeight + 'px';
-    loginDiv.querySelector('div').style.minHeight = maxHeight + 'px';
+    const documentHeight = document.documentElement.scrollHeight;
+    const maxHeight = Math.max(windowHeight, screenHeight, documentHeight, 1200); // Minimum 1200px
+    
+    loginDiv.style.height = (maxHeight + 200) + 'px';
+    loginDiv.style.top = '-100px';
+    loginDiv.style.left = '-100px';
+    loginDiv.style.width = 'calc(100vw + 200px)';
+    loginDiv.querySelector('div').style.minHeight = (maxHeight + 200) + 'px';
+    loginDiv.querySelector('div').style.paddingTop = '150px';
   }
   
   // Set height on load and resize
@@ -26,11 +32,15 @@ window.addEventListener('DOMContentLoaded', function() {
   function disableScrolling() {
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
   }
   
   function enableScrolling() {
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
   }
   
   // Check if user is already logged in (has token in localStorage)
