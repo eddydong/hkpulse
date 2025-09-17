@@ -13,14 +13,31 @@ select {
     border-radius: 6px;
     padding: 8px 28px 8px 12px;
     font-size: 1em;
-    margin-right: 18px;
     outline: none;
     box-shadow: 0 2px 8px #0004;
     transition: border 0.2s, box-shadow 0.2s;
     appearance: none;
     cursor: pointer;
-    min-width: 160px;
+    width: 100%;
     font-family: inherit;
+}
+
+.select-wrap {
+    position: relative;
+    min-width: 160px;
+    max-width: 300px;
+    flex: 1;
+}
+
+.select-wrap::after {
+    content: '▼';
+    font-size: 0.8em;
+    color: #f8d47c;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
 select:focus {

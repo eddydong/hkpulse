@@ -403,25 +403,49 @@ async function fetchTickersMeta() {
 }
 
 
-function populateSelectors(selectedIndustry = '', selectedCompany = '') {
+function populateSelectors(selectedSector = '', selectedIndustry = '', selectedCompany = '') {
   // Populate dropdowns without any 'All' placeholder options
   if (!Array.isArray(tickerMeta)) tickerMeta = [];
+  
+  const sectorSet = new Set();
   const industrySet = new Set();
-  let filteredCompanies = tickerMeta;
+  
   for (const t of tickerMeta) {
+    if (t.sector) sectorSet.add(t.sector);
+  }
+
+  let filteredBySector = tickerMeta;
+  if (selectedSector) {
+    filteredBySector = tickerMeta.filter(t => t.sector === selectedSector);
+  }
+
+  for (const t of filteredBySector) {
     if (t.industry) industrySet.add(t.industry);
   }
+
+  let filteredCompanies = filteredBySector;
   if (selectedIndustry) {
-    filteredCompanies = tickerMeta.filter(t => t.industry === selectedIndustry);
+    filteredCompanies = filteredBySector.filter(t => t.industry === selectedIndustry);
   }
+
+  const sectorSelect = document.getElementById('sector-select');
   const industrySelect = document.getElementById('industry-select');
   const companySelect = document.getElementById('company-select');
+
+  if (sectorSelect) {
+    sectorSelect.innerHTML = Array.from(sectorSet)
+      .sort()
+      .map(s => `<option value="${s}"${s === selectedSector ? ' selected' : ''}>${s}</option>`)
+      .join('');
+  }
+
   if (industrySelect) {
     industrySelect.innerHTML = Array.from(industrySet)
       .sort()
       .map(i => `<option value="${i}"${i === selectedIndustry ? ' selected' : ''}>${i}</option>`)
       .join('');
   }
+
   if (companySelect) {
     companySelect.innerHTML = filteredCompanies
       .sort((a, b) => (a.name || a.symbol).localeCompare(b.name || b.symbol))
@@ -465,35 +489,43 @@ async function fetchAndRenderForCompany(symbol) {
 }
 
 function filterAndRender() {
+  const sectorSelect = document.getElementById('sector-select');
   const industrySelect = document.getElementById('industry-select');
   const companySelect = document.getElementById('company-select');
+  let sector = sectorSelect?.value;
   let industry = industrySelect?.value;
   let company = companySelect?.value;
 
-  // If industry changed, update company selector and auto-select the first company in that industry
-  if (document.activeElement === industrySelect) {
-    populateSelectors(industry, '');
-    // Auto-select first company in filtered list (no placeholder present)
-    const firstOption = companySelect && companySelect.options.length > 0 ? companySelect.options[0].value : '';
-    if (firstOption) {
-      companySelect.value = firstOption;
-      company = firstOption;
-    } else {
-      companySelect.value = '';
-      company = '';
-    }
-  }
+  const activeElement = document.activeElement;
 
-  // If company changed, update industry selector to match
-  if (document.activeElement === companySelect && company) {
+  if (activeElement === sectorSelect) {
+    populateSelectors(sector, '', '');
+    const firstIndustryOption = industrySelect && industrySelect.options.length > 0 ? industrySelect.options[0].value : '';
+    industrySelect.value = firstIndustryOption;
+    industry = firstIndustryOption;
+    
+    populateSelectors(sector, industry, '');
+    const firstCompanyOption = companySelect && companySelect.options.length > 0 ? companySelect.options[0].value : '';
+    companySelect.value = firstCompanyOption;
+    company = firstCompanyOption;
+  } else if (activeElement === industrySelect) {
+    populateSelectors(sector, industry, '');
+    const firstCompanyOption = companySelect && companySelect.options.length > 0 ? companySelect.options[0].value : '';
+    companySelect.value = firstCompanyOption;
+    company = firstCompanyOption;
+  } else if (activeElement === companySelect) {
     const found = tickerMeta.find(t => t.symbol === company);
-    if (found && found.industry && industry !== found.industry) {
-      populateSelectors(found.industry, company);
-      industry = found.industry;
+    if (found) {
+      if (found.sector && sector !== found.sector) {
+        sector = found.sector;
+      }
+      if (found.industry && industry !== found.industry) {
+        industry = found.industry;
+      }
+      populateSelectors(sector, industry, company);
     }
   }
 
-  // Always fetch for the selected company to keep comparison accurate
   if (company) {
     fetchAndRenderForCompany(company);
   } else {
@@ -508,30 +540,40 @@ async function fetchStockData() {
   try {
     setDefaultDates();
     await fetchTickersMeta();
-    // Step 1: Select first industry
+    
+    let firstSector = '';
     let firstIndustry = '';
     let firstCompany = '';
-    // Choose the first industry alphabetically for stability
-    const industries = Array.from(new Set(tickerMeta.map(t => t.industry).filter(Boolean))).sort();
+
+    const sectors = Array.from(new Set(tickerMeta.map(t => t.sector).filter(Boolean))).sort();
+    if (sectors.length > 0) {
+      firstSector = sectors[0];
+    }
+
+    let filteredBySector = tickerMeta;
+    if (firstSector) {
+      filteredBySector = tickerMeta.filter(t => t.sector === firstSector);
+    }
+
+    const industries = Array.from(new Set(filteredBySector.map(t => t.industry).filter(Boolean))).sort();
     if (industries.length > 0) {
       firstIndustry = industries[0];
     }
-    // Step 2: Filter companies in that industry
-    let filteredCompanies = tickerMeta;
+
+    let filteredCompanies = filteredBySector;
     if (firstIndustry) {
-      filteredCompanies = tickerMeta.filter(t => t.industry === firstIndustry);
+      filteredCompanies = filteredBySector.filter(t => t.industry === firstIndustry);
     }
-    // Step 3: Select first company in that industry
+
     if (filteredCompanies.length > 0) {
-      // Stable alphabetical selection by display name then symbol
       filteredCompanies.sort((a, b) => (a.name || a.symbol).localeCompare(b.name || b.symbol));
       firstCompany = filteredCompanies[0].symbol;
     }
-    // Step 4: Populate selectors with these defaults
-    populateSelectors(firstIndustry, firstCompany);
 
-    // Step 5: Fetch only the selected company's data using params
+    populateSelectors(firstSector, firstIndustry, firstCompany);
+
     await fetchAndRenderForCompany(firstCompany);
+    document.getElementById('sector-select')?.addEventListener('change', filterAndRender);
     document.getElementById('industry-select')?.addEventListener('change', filterAndRender);
     document.getElementById('company-select')?.addEventListener('change', filterAndRender);
   } catch (error) {
