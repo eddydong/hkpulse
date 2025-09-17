@@ -6,13 +6,31 @@ window.addEventListener('DOMContentLoaded', function() {
   const loginDiv = document.getElementById('loginDiv');
   const loginForm = document.getElementById('login-form');
   
+  // Function to set proper height for login div
+  function setLoginDivHeight() {
+    const windowHeight = window.innerHeight;
+    const screenHeight = screen.height;
+    const maxHeight = Math.max(windowHeight, screenHeight);
+    loginDiv.style.height = maxHeight + 'px';
+    loginDiv.querySelector('div').style.minHeight = maxHeight + 'px';
+  }
+  
+  // Set height on load and resize
+  setLoginDivHeight();
+  window.addEventListener('resize', setLoginDivHeight);
+  window.addEventListener('orientationchange', function() {
+    setTimeout(setLoginDivHeight, 200);
+  });
+  
   // Function to disable/enable scrolling
   function disableScrolling() {
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
   }
   
   function enableScrolling() {
     document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   }
   
   // Check if user is already logged in (has token in localStorage)
