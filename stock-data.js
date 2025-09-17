@@ -6,11 +6,25 @@ window.addEventListener('DOMContentLoaded', function() {
   const loginDiv = document.getElementById('loginDiv');
   const loginForm = document.getElementById('login-form');
   
+  // Function to disable/enable scrolling
+  function disableScrolling() {
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function enableScrolling() {
+    document.body.style.overflow = '';
+  }
+  
   // Check if user is already logged in (has token in localStorage)
   if (localStorage.getItem('hkpulse-token')) {
     loginDiv.style.display = 'none';
+    enableScrolling();
     fetchStockData();
+    setupLogout();
     return;
+  } else {
+    // Login div is visible, disable scrolling
+    disableScrolling();
   }
   
   loginForm.addEventListener('submit', function(e) {
@@ -27,10 +41,31 @@ window.addEventListener('DOMContentLoaded', function() {
       
       // Hide login div after successful login
       loginDiv.style.display = 'none';
+      enableScrolling();
       // Start loading stock data
       fetchStockData();
+      // Setup logout functionality
+      setupLogout();
     }
   });
+  
+  // Logout functionality
+  function setupLogout() {
+    const mainLogo = document.getElementById('main-logo');
+    if (mainLogo) {
+      mainLogo.addEventListener('click', function() {
+        // Remove token from localStorage
+        localStorage.removeItem('hkpulse-token');
+        // Show login div
+        loginDiv.style.display = 'block';
+        disableScrolling();
+        // Clear form fields
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('remember-me').checked = false;
+      });
+    }
+  }
 });
 
 // Helper to render nested objects/arrays as HTML (copied from index.html)
