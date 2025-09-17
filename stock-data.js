@@ -503,7 +503,6 @@ function filterAndRender() {
     const firstIndustryOption = industrySelect && industrySelect.options.length > 0 ? industrySelect.options[0].value : '';
     industrySelect.value = firstIndustryOption;
     industry = firstIndustryOption;
-    
     populateSelectors(sector, industry, '');
     const firstCompanyOption = companySelect && companySelect.options.length > 0 ? companySelect.options[0].value : '';
     companySelect.value = firstCompanyOption;
@@ -526,6 +525,11 @@ function filterAndRender() {
     }
   }
 
+  // Save selection to localStorage
+  localStorage.setItem('selectedSector', sector || '');
+  localStorage.setItem('selectedIndustry', industry || '');
+  localStorage.setItem('selectedCompany', company || '');
+
   if (company) {
     fetchAndRenderForCompany(company);
   } else {
@@ -541,12 +545,13 @@ async function fetchStockData() {
     setDefaultDates();
     await fetchTickersMeta();
     
-    let firstSector = '';
-    let firstIndustry = '';
-    let firstCompany = '';
+    // Try to restore previous selection from localStorage
+    let firstSector = localStorage.getItem('selectedSector') || '';
+    let firstIndustry = localStorage.getItem('selectedIndustry') || '';
+    let firstCompany = localStorage.getItem('selectedCompany') || '';
 
     const sectors = Array.from(new Set(tickerMeta.map(t => t.sector).filter(Boolean))).sort();
-    if (sectors.length > 0) {
+    if (!firstSector && sectors.length > 0) {
       firstSector = sectors[0];
     }
 
@@ -556,7 +561,7 @@ async function fetchStockData() {
     }
 
     const industries = Array.from(new Set(filteredBySector.map(t => t.industry).filter(Boolean))).sort();
-    if (industries.length > 0) {
+    if (!firstIndustry && industries.length > 0) {
       firstIndustry = industries[0];
     }
 
@@ -565,7 +570,7 @@ async function fetchStockData() {
       filteredCompanies = filteredBySector.filter(t => t.industry === firstIndustry);
     }
 
-    if (filteredCompanies.length > 0) {
+    if (!firstCompany && filteredCompanies.length > 0) {
       filteredCompanies.sort((a, b) => (a.name || a.symbol).localeCompare(b.name || b.symbol));
       firstCompany = filteredCompanies[0].symbol;
     }
