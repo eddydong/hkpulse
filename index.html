@@ -25,7 +25,23 @@
 				<input type="text" id="username" placeholder="Username" style="background: #40444b; border: 1px solid #444; color: #e0e0e0; padding: 12px 16px; border-radius: 8px; width: 100%; max-width: 200px; font-size: 16px; box-sizing: border-box;" required />
 				<input type="password" id="password" placeholder="Password" style="background: #40444b; border: 1px solid #444; color: #e0e0e0; padding: 12px 16px; border-radius: 8px; width: 100%; max-width: 200px; font-size: 16px; box-sizing: border-box;" required />
 				<label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer;">
-					<input type="checkbox" id="remember-me" style="accent-color: #f8d47c; width: 16px; height: 16px; cursor: pointer;" />
+					<input type="checkbox" id="remember-me" style="appearance: none; width: 18px; height: 18px; border: 2px solid #444; border-radius: 4px; background: #40444b; cursor: pointer; position: relative; transition: all 0.2s;" />
+					<style>
+						#remember-me:checked {
+							background: #f8d47c !important;
+							border-color: #f8d47c !important;
+						}
+						#remember-me:checked::after {
+							content: '✓';
+							position: absolute;
+							top: 50%;
+							left: 50%;
+							transform: translate(-50%, -50%);
+							color: #23272a;
+							font-size: 12px;
+							font-weight: bold;
+						}
+					</style>
 					Remember me
 				</label>
 				<button type="submit" style="background: #f8d47c; color: #23272a; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s;">Login</button>
