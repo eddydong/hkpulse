@@ -107,7 +107,7 @@ window.addEventListener('DOMContentLoaded', function() {
     for (const symbol in trends) {
       const t = trends[symbol];
       html += `<tr style="background:#2c2f33;color:#e0e0e0;">`;
-      html += `<td>${t.symbol}</td>`;
+      html += `<td><a href="#" class="trends-symbol-link" data-symbol="${t.symbol}" data-sector="${t.sector}" data-industry="${t.industry}" style="color:#f8d47c;text-decoration:underline;">${t.symbol}</a></td>`;
       html += `<td>${t.name}</td>`;
       html += `<td>${t.sector}</td>`;
       html += `<td>${t.industry}</td>`;
@@ -160,8 +160,39 @@ window.addEventListener('DOMContentLoaded', function() {
         trendsLink.addEventListener('click', () => {
           if (loaded && cachedData) {
             trendsTableContainer.innerHTML = renderTrendsTable(cachedData);
-          } else {
-            trendsTableContainer.innerHTML = '<div style="color:#f8d47c;">Loading trends data...</div>';
+            // Add click handlers for symbol links
+            setTimeout(() => {
+              document.querySelectorAll('.trends-symbol-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  // Switch to Financials tab
+                  document.querySelectorAll('#left-menu a').forEach(l => l.classList.remove('active'));
+                  document.getElementById('financials-link').classList.add('active');
+                  document.querySelectorAll('.content-panel').forEach(p => p.style.display = 'none');
+                  document.getElementById('financials-panel').style.display = 'block';
+                  // Set selectors and update options in correct order
+                  const sector = this.getAttribute('data-sector');
+                  const industry = this.getAttribute('data-industry');
+                  const symbol = this.getAttribute('data-symbol');
+                  // 1. Update sector and its options
+                  populateSelectors(sector, '', '');
+                  const sectorSelect = document.getElementById('sector-select');
+                  if (sectorSelect) sectorSelect.value = sector;
+                  // 2. Update industry and its options
+                  populateSelectors(sector, industry, '');
+                  const industrySelect = document.getElementById('industry-select');
+                  if (industrySelect) industrySelect.value = industry;
+                  // 3. Update company and its options
+                  populateSelectors(sector, industry, symbol);
+                  const companySelect = document.getElementById('company-select');
+                  if (companySelect) companySelect.value = symbol;
+                  // 4. Fetch data for selected company
+                  if (typeof fetchAndRenderForCompany === 'function') {
+                    fetchAndRenderForCompany(symbol);
+                  }
+                });
+              });
+            }, 0);
           }
         });
       }
