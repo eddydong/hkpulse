@@ -49,6 +49,22 @@
 	<!-- Google tag (gtag.js) -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-PEQH7CBMNS"></script>
 	<script>
+document.addEventListener('DOMContentLoaded', () => {
+	const loginForm = document.getElementById('login-form');
+	if (loginForm) {
+		loginForm.addEventListener('submit', function(e) {
+			e.preventDefault();
+			// Only write token if 'remember me' is checked
+			if (document.getElementById('remember-me').checked) {
+				localStorage.setItem('hkpulse-token', 'hkpulse-token');
+			} else {
+				localStorage.removeItem('hkpulse-token');
+			}
+			document.getElementById('loginDiv').classList.add('hidden');
+			document.getElementById('main-content').style.display = 'block';
+		});
+	}
+});
 	window.dataLayer = window.dataLayer || [];
 	function gtag(){dataLayer.push(arguments);}
 	gtag('js', new Date());
@@ -207,6 +223,7 @@
 				const logoutBtn = document.getElementById('logout-btn');
 				if (logoutBtn) {
 					logoutBtn.onclick = function() {
+						localStorage.removeItem('hkpulse-token');
 						document.getElementById('loginDiv').classList.remove('hidden');
 						document.getElementById('main-content').style.display = 'none';
 					};
