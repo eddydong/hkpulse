@@ -683,5 +683,3 @@ async function fetchStockData() {
     }
   }
 }
-
-window.addEventListener('DOMContentLoaded', fetchStockData);
