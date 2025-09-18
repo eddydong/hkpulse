@@ -61,6 +61,78 @@ select option {
     display: block;
     margin: 0 auto 20px auto;
 }
+
+#left-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 100vh;
+    background: #2c2f33;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+    z-index: 100;
+}
+
+#left-menu #main-logo {
+    max-width: 40px;
+    height: auto;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.menu-items {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+.menu-items a, .menu-footer a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: #8e9297;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.menu-items a svg, .menu-footer a svg {
+    stroke: #8e9297;
+    transition: stroke 0.2s;
+}
+
+.menu-items a:hover svg, .menu-footer a:hover svg {
+    stroke: #f8d47c;
+}
+
+.menu-items a.active svg, .menu-footer a.active svg {
+    stroke: #f8d47c;
+}
+
+.menu-items a:hover, .menu-footer a:hover {
+    background: #40444b;
+    color: #f8d47c;
+}
+
+.menu-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#main-content {
+    margin-left: 60px;
+    padding: 20px;
+}
+
 html {
     overflow-y: scroll;
 }
@@ -69,7 +141,7 @@ body {
     background: #181a1b;
     color: #e0e0e0;
     margin: 0;
-    padding: 20px;
+    padding: 0;
 }
 h1 {
     color: #fff;
