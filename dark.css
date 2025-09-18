@@ -55,6 +55,14 @@ select option {
     align-items: center;
     gap: 1.5em;
     margin-bottom: 1.5em;
+    justify-content: center;
+}
+#main-logo {
+    display: block;
+    margin: 0 auto 20px auto;
+}
+html {
+    overflow-y: scroll;
 }
 body {
     font-family: Arial, sans-serif;
