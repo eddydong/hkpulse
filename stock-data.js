@@ -79,20 +79,7 @@ window.addEventListener('DOMContentLoaded', function() {
   
   // Logout functionality
   function setupLogout() {
-    const mainLogo = document.getElementById('main-logo');
-    if (mainLogo) {
-      mainLogo.addEventListener('click', function() {
-        // Remove token from localStorage
-        localStorage.removeItem('hkpulse-token');
-        // Show login div
-        loginDiv.classList.remove('hidden');
-        disableScrolling();
-        // Clear form fields
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
-        document.getElementById('remember-me').checked = false;
-      });
-    }
+    // Logout from logo removed
   }
 });
 
