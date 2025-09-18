@@ -665,9 +665,16 @@ async function fetchAndRenderForCompany(symbol) {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('Network response was not ok');
   const data = await resp.json();
+
+  // Find the latest date with data for the symbol
+  const availableDates = getLatestTwoDates(data, symbol);
+  const latestDate = availableDates[0];
+  const priorDate = availableDates[1];
+
   // Always use absolute HKT dates: today = currentEnd, yesterday = currentStart
-  const todayPayload = extractSymbolByDate(data, currentEnd, symbol);
-  const yestPayload = extractSymbolByDate(data, currentStart, symbol);
+  const todayPayload = latestDate ? extractSymbolByDate(data, latestDate, symbol) : undefined;
+  const yestPayload = priorDate ? extractSymbolByDate(data, priorDate, symbol) : undefined;
+  
   allStockData = todayPayload ? { [symbol]: todayPayload } : {};
   currentSymbol = symbol;
     if (container) {
