@@ -7,6 +7,39 @@ if (!localStorage.getItem('selectedMarket')) {
 	console.log('selectedMarket already set:', localStorage.getItem('selectedMarket'));
 }
 document.addEventListener('DOMContentLoaded', () => {
+	// Enforce persistent cooldown on page load
+	setTimeout(function() {
+		if (loginBtn && usernameInput && otpInput) {
+			const lastOtpTime = parseInt(localStorage.getItem('otpCooldownTs') || '0', 10);
+			const now = Math.floor(Date.now() / 1000);
+			const remaining = lastOtpTime ? Math.max(0, 30 - (now - lastOtpTime)) : 0;
+			if (remaining > 0 && usernameInput.style.display !== 'none') {
+				loginBtn.textContent = `Wait ${remaining}s`;
+				loginBtn.disabled = true;
+				loginBtn.style.background = '#888';
+				loginBtn.style.color = '#eee';
+				let cooldown = remaining;
+				function updateCooldown() {
+					const lastTs = parseInt(localStorage.getItem('otpCooldownTs') || '0', 10);
+					const nowTs = Math.floor(Date.now() / 1000);
+					const left = Math.max(0, 30 - (nowTs - lastTs));
+					if (usernameInput.style.display !== 'none' && left > 0) {
+						loginBtn.textContent = `Wait ${left}s`;
+						loginBtn.disabled = true;
+						loginBtn.style.background = '#888';
+						loginBtn.style.color = '#eee';
+						setTimeout(updateCooldown, 1000);
+					} else {
+						loginBtn.textContent = 'Send OTP';
+						loginBtn.disabled = false;
+						loginBtn.style.background = '#f8d47c';
+						loginBtn.style.color = '#23272a';
+					}
+				}
+				setTimeout(updateCooldown, 1000);
+			}
+		}
+	}, 0);
 	const loginDiv = document.getElementById('loginDiv');
 	const loginForm = document.getElementById('login-form');
 
@@ -90,6 +123,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				alert('Please enter your email.');
 				return;
 			}
+			// Persistent cooldown logic
+			const lastOtpTime = parseInt(localStorage.getItem('otpCooldownTs') || '0', 10);
+			const now = Math.floor(Date.now() / 1000);
+			const remaining = lastOtpTime ? Math.max(0, 30 - (now - lastOtpTime)) : 0;
+			if (remaining > 0) {
+				loginBtn.disabled = true;
+				loginBtn.textContent = `Wait ${remaining}s`;
+				loginBtn.style.background = '#888';
+				loginBtn.style.color = '#eee';
+				return;
+			}
 			try {
 				loginBtn.disabled = true;
 				loginBtn.textContent = 'Sending...';
@@ -114,6 +158,30 @@ document.addEventListener('DOMContentLoaded', () => {
 				loginBtn.disabled = false;
 				otpStep = true;
 				otpInput.focus();
+				// Start persistent cooldown for Send OTP only (not for Enter)
+				localStorage.setItem('otpCooldownTs', Math.floor(Date.now() / 1000));
+				let cooldown = 30;
+				loginBtn.cooldownActive = true;
+				function updateCooldown() {
+					const lastTs = parseInt(localStorage.getItem('otpCooldownTs') || '0', 10);
+					const nowTs = Math.floor(Date.now() / 1000);
+					const left = Math.max(0, 30 - (nowTs - lastTs));
+					if (!otpStep && left > 0) {
+						loginBtn.textContent = `Wait ${left}s`;
+						loginBtn.disabled = true;
+						setTimeout(updateCooldown, 1000);
+					} else {
+						if (!otpStep) {
+							loginBtn.textContent = 'Send OTP';
+							loginBtn.disabled = false;
+						} else {
+							loginBtn.textContent = 'Enter';
+							loginBtn.disabled = false;
+						}
+						loginBtn.cooldownActive = false;
+					}
+				}
+				setTimeout(updateCooldown, 1000);
 			} catch (err) {
 				console.log('[LOGIN] Request OTP error:', err);
 				alert('Login failed: ' + err.message);
@@ -229,8 +297,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				otpInput.value = '';
 			}
 			if (loginBtn) {
-				loginBtn.textContent = 'Send OTP';
-				loginBtn.disabled = false;
+				// Check persistent cooldown on logout
+				const lastOtpTime = parseInt(localStorage.getItem('otpCooldownTs') || '0', 10);
+				const now = Math.floor(Date.now() / 1000);
+				const remaining = lastOtpTime ? Math.max(0, 30 - (now - lastOtpTime)) : 0;
+				if (remaining > 0) {
+					loginBtn.textContent = `Wait ${remaining}s`;
+					loginBtn.disabled = true;
+				} else {
+					loginBtn.textContent = 'Send OTP';
+					loginBtn.disabled = false;
+				}
 			}
 			otpStep = false;
 		};
