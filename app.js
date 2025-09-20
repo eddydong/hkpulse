@@ -43,28 +43,126 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	// Check if user is already logged in (has token in localStorage)
-	if (localStorage.getItem('hkpulse-token')) {
-		loginDiv.classList.add('hidden');
-		enableScrolling();
-		if (typeof fetchStockData === 'function') fetchStockData();
-		setupLogout();
-	} else {
-		disableScrolling();
-	}
-
-	loginForm.addEventListener('submit', function(e) {
-		e.preventDefault();
-		const username = document.getElementById('username').value.trim();
-		const password = document.getElementById('password').value.trim();
-		const rememberMe = document.getElementById('remember-me').checked;
-		if (username && password) {
-			if (rememberMe) {
-				localStorage.setItem('hkpulse-token', 'logged-in-' + Date.now());
+	async function tryTokenLogin() {
+		const token = localStorage.getItem('hkpulse-token');
+		if (token) {
+			try {
+				const resp = await fetch('https://token-login-v436pnaqfa-df.a.run.app', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ token })
+				});
+				const data = await resp.json();
+				if (resp.ok && !data.error) {
+					loginDiv.classList.add('hidden');
+					enableScrolling();
+					if (typeof fetchStockData === 'function') fetchStockData();
+					setupLogout();
+					return;
+				} else {
+					// Invalid token, remove and show login
+					localStorage.removeItem('hkpulse-token');
+				}
+			} catch (err) {
+				// Network or other error, show login
+				localStorage.removeItem('hkpulse-token');
 			}
-			loginDiv.classList.add('hidden');
-			enableScrolling();
-			if (typeof fetchStockData === 'function') fetchStockData();
-			setupLogout();
+		}
+		// No valid token, show login panel
+		disableScrolling();
+		loginDiv.classList.remove('hidden');
+	}
+	tryTokenLogin();
+
+	const usernameInput = document.getElementById('username');
+	const otpInput = document.getElementById('otp-input');
+	const loginBtn = document.getElementById('login-btn');
+	let otpStep = false;
+
+	loginForm.addEventListener('submit', async function(e) {
+		e.preventDefault();
+		if (!otpStep) {
+			// Step 1: Send OTP (POST)
+			const email = usernameInput.value.trim();
+			if (!email) {
+				alert('Please enter your email.');
+				return;
+			}
+			try {
+				loginBtn.disabled = true;
+				loginBtn.textContent = 'Sending...';
+				const reqResp = await fetch('https://request-login-code-v436pnaqfa-df.a.run.app', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email })
+				});
+				const reqData = await reqResp.json();
+				if (!reqResp.ok || reqData.error) {
+					alert('Error requesting login code: ' + (reqData.error || reqResp.status));
+					loginBtn.disabled = false;
+					loginBtn.textContent = 'Send OTP';
+					return;
+				}
+				// Step 2: Show OTP input
+				usernameInput.style.display = 'none';
+				otpInput.style.display = '';
+				loginBtn.textContent = 'Enter';
+				loginBtn.disabled = false;
+				otpStep = true;
+				otpInput.focus();
+			} catch (err) {
+				alert('Login failed: ' + err.message);
+				loginBtn.disabled = false;
+				loginBtn.textContent = 'Send OTP';
+			}
+		} else {
+			// Step 3: Verify OTP (POST)
+			const email = usernameInput.value.trim();
+			const otp = otpInput.value.trim();
+			if (!otp) {
+				alert('OTP is required.');
+				return;
+			}
+			try {
+				loginBtn.disabled = true;
+				loginBtn.textContent = 'Verifying...';
+				const verifyResp = await fetch('https://verify-login-code-v436pnaqfa-df.a.run.app', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email, otp })
+				});
+				const verifyData = await verifyResp.json();
+				if (!verifyResp.ok || verifyData.error || !verifyData.token) {
+					alert('Error verifying OTP: ' + (verifyData.error || verifyResp.status));
+					loginBtn.disabled = false;
+					loginBtn.textContent = 'Enter';
+					return;
+				}
+				const token = verifyData.token;
+				// Step 4: Finalize login with token (POST)
+				const tokenResp = await fetch('https://token-login-v436pnaqfa-df.a.run.app', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ token })
+				});
+				const tokenData = await tokenResp.json();
+				if (!tokenResp.ok || tokenData.error) {
+					alert('Error finalizing login: ' + (tokenData.error || tokenResp.status));
+					loginBtn.disabled = false;
+					loginBtn.textContent = 'Enter';
+					return;
+				}
+				// Step 5: Store token and proceed
+				localStorage.setItem('hkpulse-token', token);
+				loginDiv.classList.add('hidden');
+				enableScrolling();
+				if (typeof fetchStockData === 'function') fetchStockData();
+				setupLogout();
+			} catch (err) {
+				alert('Login failed: ' + err.message);
+				loginBtn.disabled = false;
+				loginBtn.textContent = 'Enter';
+			}
 		}
 	});
 
