@@ -1,6 +1,6 @@
 const http = require('http');
 
-const data = JSON.stringify({ token: "iPVzdV0u56vfoeWIrF1V85N8vSQPN9eEYHbZqjPNctYD1HlDTRGldDJ4WBixdmR1" });
+const data = JSON.stringify({ email: "eddykd@icloud.com" });
 
 const options = {
   hostname: '127.0.0.1',

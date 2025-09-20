@@ -62,6 +62,25 @@ function getLatestTwoDates(json, symbol) {
 	return found;
 }
 // --- Financials Panel Data Fetching Logic ---
+// Listen for marketChanged event to reload financials data
+window.addEventListener('marketChanged', () => {
+	// Re-fetch tickers meta and reset selectors
+	fetchTickersMeta().then(() => {
+		populateSelectors();
+		const companySelect = document.getElementById('company-select');
+		let selectedCompany = '';
+		if (companySelect && companySelect.options.length > 0) {
+			selectedCompany = companySelect.options[0].value;
+			companySelect.value = selectedCompany;
+		}
+		if (selectedCompany) {
+			fetchAndRenderForCompany(selectedCompany);
+		} else {
+			const dataContainer = document.getElementById('data-container');
+			if (dataContainer) dataContainer.innerHTML = '';
+		}
+	});
+});
 let allStockData = {};
 let tickerMeta = [];
 let currentSymbol = '';

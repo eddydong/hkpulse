@@ -50,6 +50,26 @@ function renderTrendsTable(data) {
 
 // Show trends table when Trends tab is activated
 document.addEventListener('DOMContentLoaded', () => {
+	// Listen for marketChanged event to reload trends data in the background
+	window.addEventListener('marketChanged', () => {
+		const trendsPanel = document.getElementById('trends-panel');
+		const trendsTableContainer = document.getElementById('trends-table-container');
+		// Fetch new data and cache it
+		fetchTrendsData().then(data => {
+			if (data && !data.error) {
+				cachedData = data;
+				loaded = true;
+				// If user is currently viewing Trends panel, update table immediately
+				if (trendsPanel && trendsPanel.style.display !== 'none') {
+					trendsTableContainer.innerHTML = renderTrendsTable(cachedData);
+				}
+			} else {
+				if (trendsTableContainer && trendsPanel && trendsPanel.style.display !== 'none') {
+					trendsTableContainer.innerHTML = `<div style='color:red;'>Error loading trends: ${data.error || 'Unknown error'}</div>`;
+				}
+			}
+		});
+	});
 	const trendsLink = document.getElementById('trends-link');
 	const trendsPanel = document.getElementById('trends-panel');
 	const trendsTableContainer = document.getElementById('trends-table-container');

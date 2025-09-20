@@ -1,4 +1,11 @@
 // --- App-level logic: login/logout, scrolling, loginDiv control ---
+// Ensure selectedMarket is always set in localStorage at startup (runs immediately)
+if (!localStorage.getItem('selectedMarket')) {
+	localStorage.setItem('selectedMarket', 'hk');
+	console.log('selectedMarket initialized to hk');
+} else {
+	console.log('selectedMarket already set:', localStorage.getItem('selectedMarket'));
+}
 document.addEventListener('DOMContentLoaded', () => {
 	const loginDiv = document.getElementById('loginDiv');
 	const loginForm = document.getElementById('login-form');
