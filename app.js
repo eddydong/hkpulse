@@ -47,24 +47,26 @@ document.addEventListener('DOMContentLoaded', () => {
 		const token = localStorage.getItem('hkpulse-token');
 		if (token) {
 			try {
+				console.log('[LOGIN] POST https://token-login-v436pnaqfa-df.a.run.app', { token });
 				const resp = await fetch('https://token-login-v436pnaqfa-df.a.run.app', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ token })
 				});
 				const data = await resp.json();
+				console.log('[LOGIN] Response:', resp.status, data);
 				if (resp.ok && !data.error) {
 					loginDiv.classList.add('hidden');
 					enableScrolling();
 					if (typeof fetchStockData === 'function') fetchStockData();
-					setupLogout();
+					// Do NOT call setupLogout() here
 					return;
 				} else {
 					// Invalid token, remove and show login
 					localStorage.removeItem('hkpulse-token');
 				}
 			} catch (err) {
-				// Network or other error, show login
+				console.log('[LOGIN] Token login error:', err);
 				localStorage.removeItem('hkpulse-token');
 			}
 		}
@@ -91,12 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			try {
 				loginBtn.disabled = true;
 				loginBtn.textContent = 'Sending...';
+				console.log('[LOGIN] POST https://request-login-code-v436pnaqfa-df.a.run.app', { email });
 				const reqResp = await fetch('https://request-login-code-v436pnaqfa-df.a.run.app', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ email })
 				});
 				const reqData = await reqResp.json();
+				console.log('[LOGIN] Response:', reqResp.status, reqData);
 				if (!reqResp.ok || reqData.error) {
 					alert('Error requesting login code: ' + (reqData.error || reqResp.status));
 					loginBtn.disabled = false;
@@ -111,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				otpStep = true;
 				otpInput.focus();
 			} catch (err) {
+				console.log('[LOGIN] Request OTP error:', err);
 				alert('Login failed: ' + err.message);
 				loginBtn.disabled = false;
 				loginBtn.textContent = 'Send OTP';
@@ -126,12 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			try {
 				loginBtn.disabled = true;
 				loginBtn.textContent = 'Verifying...';
+				console.log('[LOGIN] POST https://verify-login-code-v436pnaqfa-df.a.run.app', { email, otp });
 				const verifyResp = await fetch('https://verify-login-code-v436pnaqfa-df.a.run.app', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ email, otp })
 				});
 				const verifyData = await verifyResp.json();
+				console.log('[LOGIN] Response:', verifyResp.status, verifyData);
 				if (!verifyResp.ok || verifyData.error || !verifyData.token) {
 					alert('Error verifying OTP: ' + (verifyData.error || verifyResp.status));
 					loginBtn.disabled = false;
@@ -140,12 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				const token = verifyData.token;
 				// Step 4: Finalize login with token (POST)
+				console.log('[LOGIN] POST https://token-login-v436pnaqfa-df.a.run.app', { token });
 				const tokenResp = await fetch('https://token-login-v436pnaqfa-df.a.run.app', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ token })
 				});
 				const tokenData = await tokenResp.json();
+				console.log('[LOGIN] Response:', tokenResp.status, tokenData);
 				if (!tokenResp.ok || tokenData.error) {
 					alert('Error finalizing login: ' + (tokenData.error || tokenResp.status));
 					loginBtn.disabled = false;
@@ -157,8 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				loginDiv.classList.add('hidden');
 				enableScrolling();
 				if (typeof fetchStockData === 'function') fetchStockData();
-				setupLogout();
+				// Do NOT call setupLogout() here
 			} catch (err) {
+				console.log('[LOGIN] Verify OTP or token login error:', err);
 				alert('Login failed: ' + err.message);
 				loginBtn.disabled = false;
 				loginBtn.textContent = 'Enter';
@@ -167,55 +177,85 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	function setupLogout() {
-		// Logout from logo removed
-	}
-});
-			document.addEventListener('DOMContentLoaded', () => {
-				const menuLinks = document.querySelectorAll('#left-menu a');
-				const contentPanels = document.querySelectorAll('.content-panel');
-
-				// Hide all panels and deactivate all links
-				menuLinks.forEach(l => l.classList.remove('active'));
-				contentPanels.forEach(p => p.style.display = 'none');
-
-				// Restore last tab from localStorage, default to Trends
-				const lastTabId = localStorage.getItem('activeTabId') || 'trends-link';
-				const lastPanelId = lastTabId.replace('-link', '-panel');
-				const lastLink = document.getElementById(lastTabId);
-				const lastPanel = document.getElementById(lastPanelId);
-				if (lastLink) lastLink.classList.add('active');
-				if (lastPanel) lastPanel.style.display = 'block';
-
-				// Add logout to button
-				const logoutBtn = document.getElementById('logout-btn');
-				if (logoutBtn) {
-					logoutBtn.onclick = function() {
-						localStorage.removeItem('hkpulse-token');
-						document.getElementById('loginDiv').classList.remove('hidden');
-						document.getElementById('main-content').style.display = 'none';
-					};
-				}
-
-				menuLinks.forEach(link => {
-					link.addEventListener('click', (e) => {
-						e.preventDefault();
-
-						// Deactivate all links
-						menuLinks.forEach(l => l.classList.remove('active'));
-						// Hide all panels
-						contentPanels.forEach(p => p.style.display = 'none');
-
-						// Activate the clicked link
-						link.classList.add('active');
-
-						// Show the corresponding panel
-						const panelId = link.id.replace('-link', '-panel');
-						const panel = document.getElementById(panelId);
-						if (panel) {
-							panel.style.display = 'block';
-						}
-						// Save active tab to localStorage
-						localStorage.setItem('activeTabId', link.id);
-					});
-				});
+		// Only call logout API when user explicitly logs out
+		// This function should only be called by the logout button handler
+		const token = localStorage.getItem('hkpulse-token');
+		if (token) {
+			console.log('[LOGOUT] POST https://logout-v436pnaqfa-df.a.run.app', { token });
+			fetch('https://logout-v436pnaqfa-df.a.run.app', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ token })
+			})
+			.then(resp => resp.json().then(data => {
+				console.log('[LOGOUT] Response:', resp.status, data);
+			}))
+			.catch(err => {
+				console.log('[LOGOUT] Error:', err);
 			});
+		}
+	}
+	// --- Menu and logout logic ---
+	const menuLinks = document.querySelectorAll('#left-menu a');
+	const contentPanels = document.querySelectorAll('.content-panel');
+
+	// Hide all panels and deactivate all links
+	menuLinks.forEach(l => l.classList.remove('active'));
+	contentPanels.forEach(p => p.style.display = 'none');
+
+	// Restore last tab from localStorage, default to Trends
+	const lastTabId = localStorage.getItem('activeTabId') || 'trends-link';
+	const lastPanelId = lastTabId.replace('-link', '-panel');
+	const lastLink = document.getElementById(lastTabId);
+	const lastPanel = document.getElementById(lastPanelId);
+	if (lastLink) lastLink.classList.add('active');
+	if (lastPanel) lastPanel.style.display = 'block';
+
+	// Add logout to button
+	const logoutBtn = document.getElementById('logout-btn');
+	if (logoutBtn) {
+		logoutBtn.onclick = function() {
+			setupLogout(); // Only call logout API here
+			localStorage.removeItem('hkpulse-token');
+			document.getElementById('loginDiv').classList.remove('hidden');
+			document.getElementById('main-content').style.display = 'none';
+			// Reset login form UI
+			if (usernameInput) {
+				usernameInput.style.display = '';
+				usernameInput.value = '';
+			}
+			if (otpInput) {
+				otpInput.style.display = 'none';
+				otpInput.value = '';
+			}
+			if (loginBtn) {
+				loginBtn.textContent = 'Send OTP';
+				loginBtn.disabled = false;
+			}
+			otpStep = false;
+		};
+	}
+
+	menuLinks.forEach(link => {
+		link.addEventListener('click', (e) => {
+			e.preventDefault();
+
+			// Deactivate all links
+			menuLinks.forEach(l => l.classList.remove('active'));
+			// Hide all panels
+			contentPanels.forEach(p => p.style.display = 'none');
+
+			// Activate the clicked link
+			link.classList.add('active');
+
+			// Show the corresponding panel
+			const panelId = link.id.replace('-link', '-panel');
+			const panel = document.getElementById(panelId);
+			if (panel) {
+				panel.style.display = 'block';
+			}
+			// Save active tab to localStorage
+			localStorage.setItem('activeTabId', link.id);
+		});
+	});
+});
