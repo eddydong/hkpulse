@@ -198,63 +198,19 @@ document.addEventListener('DOMContentLoaded', () => {
 				<h2 style="margin: 0 0 24px 0;">Settings</h2>
 				<button id="logout-btn" style="background: #e57373; color: #fff; border: none; padding: 6px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px;">Logout</button>
 			</div>
+			<div style="margin-bottom: 24px;">
+				<label style="font-weight: 600; margin-right: 16px;">Market:</label>
+				<span id="market-pill-us" class="market-pill" style="display:inline-block;cursor:pointer;padding:6px 18px;border-radius:20px;background:#23272a;color:#f8d47c;font-weight:600;margin-right:8px;border:2px solid #444;">US</span>
+				<span id="market-pill-uk" class="market-pill" style="display:inline-block;cursor:pointer;padding:6px 18px;border-radius:20px;background:#23272a;color:#f8d47c;font-weight:600;border:2px solid #444;">UK</span>
+			</div>
 		</div>
 		<div id="help-panel" class="content-panel" style="display: none;">
 			<h2 style="margin: 0 0 24px 0;">Help</h2>
 		</div>
 	</div>
 	<!-- Include the stock-data.js script to fetch and render live stock data -->
-	<script src="stock-data.js"></script>
-	<script>
-			document.addEventListener('DOMContentLoaded', () => {
-				const menuLinks = document.querySelectorAll('#left-menu a');
-				const contentPanels = document.querySelectorAll('.content-panel');
-
-				// Hide all panels and deactivate all links
-				menuLinks.forEach(l => l.classList.remove('active'));
-				contentPanels.forEach(p => p.style.display = 'none');
-
-				// Restore last tab from localStorage, default to Trends
-				const lastTabId = localStorage.getItem('activeTabId') || 'trends-link';
-				const lastPanelId = lastTabId.replace('-link', '-panel');
-				const lastLink = document.getElementById(lastTabId);
-				const lastPanel = document.getElementById(lastPanelId);
-				if (lastLink) lastLink.classList.add('active');
-				if (lastPanel) lastPanel.style.display = 'block';
-
-				// Add logout to button
-				const logoutBtn = document.getElementById('logout-btn');
-				if (logoutBtn) {
-					logoutBtn.onclick = function() {
-						localStorage.removeItem('hkpulse-token');
-						document.getElementById('loginDiv').classList.remove('hidden');
-						document.getElementById('main-content').style.display = 'none';
-					};
-				}
-
-				menuLinks.forEach(link => {
-					link.addEventListener('click', (e) => {
-						e.preventDefault();
-
-						// Deactivate all links
-						menuLinks.forEach(l => l.classList.remove('active'));
-						// Hide all panels
-						contentPanels.forEach(p => p.style.display = 'none');
-
-						// Activate the clicked link
-						link.classList.add('active');
-
-						// Show the corresponding panel
-						const panelId = link.id.replace('-link', '-panel');
-						const panel = document.getElementById(panelId);
-						if (panel) {
-							panel.style.display = 'block';
-						}
-						// Save active tab to localStorage
-						localStorage.setItem('activeTabId', link.id);
-					});
-				});
-			});
-	</script>
+	<script src="app.js"></script>
+	<script src="trends.js"></script>
+	<script src="financials.js"></script>
 </body>
 </html>
